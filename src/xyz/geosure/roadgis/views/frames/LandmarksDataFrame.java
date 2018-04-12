@@ -65,7 +65,7 @@ public class LandmarksDataFrame extends FrameWindow{
 				new ActionListener() {
 					public void actionPerformed(ActionEvent aev) {
 						landmark_saveData();  
-						app.getHorizontalDesign().getHorizontalStatusBar().setStatusBarText(0, "Save Landmark Data") ;
+						app.getUIActionsHandler().setStatusBarText(0, "Save Landmark Data") ;
 					} // actionPerformed
 				} // ActionListener
 				) ; // file save report
@@ -85,7 +85,7 @@ public class LandmarksDataFrame extends FrameWindow{
 							app.getHorizontalDesign().getRoadDesign().getElevationMarks().get(i).setLocation(new GeometryFactory().createPoint(new Coordinate( Double.parseDouble(valX), Double.parseDouble(valY))));
 							app.getHorizontalDesign().getRoadDesign().getElevationMarks().get(i).setElevation(Double.parseDouble(valStr)) ;
 						}
-						app.getHorizontalDesign().getHorizontalStatusBar().setStatusBarText(0, "Update Elevation Data") ;
+						app.getUIActionsHandler().setStatusBarText(0, "Update Elevation Data") ;
 					} // actionPerformed
 				} // ActionListener
 				) ; //  save elevation    
@@ -93,7 +93,7 @@ public class LandmarksDataFrame extends FrameWindow{
 				new ActionListener() {
 					public void actionPerformed(ActionEvent aev) {
 						landmark_printData();  
-						app.getHorizontalDesign().getHorizontalStatusBar().setStatusBarText(0, "Print Landmark Data") ;
+						app.getUIActionsHandler().setStatusBarText(0, "Print Landmark Data") ;
 					} // actionPerformed
 				} // ActionListener
 				) ; // file save report
@@ -120,7 +120,7 @@ public class LandmarksDataFrame extends FrameWindow{
 			data[i][1] = ConversionUtils.CStr(Math.round(app.getHorizontalDesign().getRoadDesign().getElevationMarks().get(i).getLocation().getX()/myScale*1000f)/1000f) ;
 			data[i][2] = ConversionUtils.CStr(Math.round(app.getHorizontalDesign().getRoadDesign().getElevationMarks().get(i).getLocation().getY()/myScale*1000f)/1000f) ;
 			data[i][3] = ConversionUtils.CStr(Math.round(app.getHorizontalDesign().getRoadDesign().getElevationMarks().get(i).getElevation()*1000f)/1000f);
-			switch (app.getHorizontalDesign().getRoadDesign().getElevationMarks().get(i).getSegmentType()) {
+			switch (app.getHorizontalDesign().getRoadDesign().getElevationMarks().get(i).getMarkerType()) {
 			case LINE:
 				data[i][4] = "Line";
 				break;
@@ -183,7 +183,7 @@ public class LandmarksDataFrame extends FrameWindow{
 		catch (Exception e){
 			//do nothing
 			System.out.println("Print Landmark Data:"+e.toString());
-			app.getHorizontalDesign().getHorizontalStatusBar().setStatusBarText(1, "Error: Print Landmark Data, "+e.toString()) ;
+			app.getUIActionsHandler().setStatusBarText(1, "Error: Print Landmark Data, "+e.toString()) ;
 		} // try
 
 	}// landmark print data
@@ -208,7 +208,7 @@ public class LandmarksDataFrame extends FrameWindow{
 		catch (Exception e){
 			//do nothing
 			System.out.println("Save Landmark Data File:"+e.toString());
-			app.getHorizontalDesign().getHorizontalStatusBar().setStatusBarText(1, "Error: Saving Landmark Data, "+e.toString()) ;
+			app.getUIActionsHandler().setStatusBarText(1, "Error: Saving Landmark Data, "+e.toString()) ;
 		} // try
 
 	}// landmark save data

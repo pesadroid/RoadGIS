@@ -11,9 +11,7 @@ import javax.swing.JMenuItem;
 import javax.swing.KeyStroke;
 
 import xyz.geosure.roadgis.RoadGISApplication;
-import xyz.geosure.roadgis.actions.AddLayerAction;
-import xyz.geosure.roadgis.actions.HorizontalCurveCreateAction;
-import xyz.geosure.roadgis.actions.HorizontalLineCreateAction;
+import xyz.geosure.roadgis.actions.LayerAddAction;
 import xyz.geosure.roadgis.actions.EditDeleteAction;
 import xyz.geosure.roadgis.actions.EditRedoAction;
 import xyz.geosure.roadgis.actions.EditUndoAction;
@@ -23,7 +21,11 @@ import xyz.geosure.roadgis.actions.FileImportAction;
 import xyz.geosure.roadgis.actions.FilePrintAction;
 import xyz.geosure.roadgis.actions.FileSaveAction;
 import xyz.geosure.roadgis.actions.HelpAboutAction;
-import xyz.geosure.roadgis.actions.InterpolatePointsAction;
+import xyz.geosure.roadgis.actions.HorizontalCurveCreateAction;
+import xyz.geosure.roadgis.actions.HorizontalLineCreateAction;
+import xyz.geosure.roadgis.actions.HorizontalSegmentAlignAction;
+import xyz.geosure.roadgis.actions.LayerInterpolateAction;
+import xyz.geosure.roadgis.actions.LayerAddOSMAction;
 import xyz.geosure.roadgis.actions.PopupAction;
 
 public class RoadGISMenu {
@@ -84,14 +86,17 @@ public class RoadGISMenu {
 
 		// edit menu_layers
 		JMenu menu_layers = new JMenu("Layers") ;
-		JMenuItem layer_add = new JMenuItem("Add Layer") ;
-		layer_add.addActionListener(new AddLayerAction(app)) ; // coords_import
+		JMenuItem layer_add = new JMenuItem("Add Vector Layer") ;
+		layer_add.addActionListener(new LayerAddAction(app)) ; // coords_import
 		menu_layers.add(layer_add) ;
+
+		JMenuItem osm_layer_add = new JMenuItem("Add Open Street Map Layer") ;
+		osm_layer_add.addActionListener(new LayerAddOSMAction(app)) ; // coords_import
+		menu_layers.add(osm_layer_add) ;
 		
-		menu_layers.addSeparator() ;
-		
+		menu_layers.addSeparator() ;		
 		JMenuItem layer_interpolate = new JMenuItem("Create Interpolated Layer") ;
-		layer_interpolate.addActionListener(new InterpolatePointsAction(app)) ; // coords_import
+		layer_interpolate.addActionListener(new LayerInterpolateAction(app)) ; // coords_import
 		menu_layers.add(layer_interpolate) ;
 		
 		// edit menu
@@ -328,7 +333,7 @@ public class RoadGISMenu {
 		view_reset.addActionListener(
 				new ActionListener() {
 					public void actionPerformed(ActionEvent aev) {
-						app.getHorizontalDesign().view_RESET();
+						app.getUIActionsHandler().view_RESET();
 					} // actionPerformed
 				} // ActionListener
 				) ; // view reset
@@ -349,14 +354,14 @@ public class RoadGISMenu {
 		view_road.addActionListener(
 				new ActionListener() {
 					public void actionPerformed(ActionEvent aev) {
-						app.getHorizontalDesign().viewRoadDesign();  
+						app.getUIActionsHandler().enableRoadDesign();  
 					} // actionPerformed
 				} // ActionListener
 				) ; // view horizontal road design only
 		view_roadOnly.addActionListener(
 				new ActionListener() {
 					public void actionPerformed(ActionEvent aev) {
-						app.getHorizontalDesign().viewRoadOnly();  
+						app.getUIActionsHandler().enableRoadOnly();  
 					} // actionPerformed
 				} // ActionListener
 				) ; // view horizontal road design only
@@ -416,13 +421,7 @@ public class RoadGISMenu {
 					} // actionPerformed
 				} // ActionListener
 				) ; // tool_insert
-		tool_halign.addActionListener(
-				new ActionListener() {
-					public void actionPerformed(ActionEvent aev) {
-						app.getHorizontalDesign().tool_curvehAlignMarks();
-					} // actionPerformed
-				} // ActionListener
-				) ; // tool_halign
+		tool_halign.addActionListener(new HorizontalSegmentAlignAction(app)) ; // tool_halign
 		tool_property.addActionListener(
 				new ActionListener() {
 					public void actionPerformed(ActionEvent aev) {

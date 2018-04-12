@@ -1,10 +1,21 @@
 package xyz.geosure.roadgis.actions;
 
-import java.awt.Color;
+/*
+ * LayerAddAction.java
+ * 
+ * This Action loads a File as a Layer. Supported formats includ ESRI Shapefile AND GeoTIFF files
+ * as well as any other format supported by Geotools
+ * 
+ * Created on March 21, 2018, Felix Kiptum <kiptum@pesadroid.com>
+ * 
+ * 
+ */
+
 import java.awt.FileDialog;
 import java.awt.Frame;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.image.Raster;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -16,13 +27,13 @@ import java.util.Map;
 
 import javax.swing.AbstractAction;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.data.DataSourceException;
 import org.geotools.data.DataStore;
 import org.geotools.data.DataUtilities;
 import org.geotools.data.FileDataStoreFinder;
 import org.geotools.data.simple.SimpleFeatureSource;
-import org.geotools.factory.CommonFactoryFinder;
 import org.geotools.factory.Hints;
 import org.geotools.feature.SchemaException;
 import org.geotools.gce.geotiff.GeoTiffReader;
@@ -32,13 +43,13 @@ import org.geotools.map.FeatureLayer;
 import org.geotools.map.GridCoverageLayer;
 import org.geotools.referencing.CRS;
 import org.geotools.referencing.CRS.AxisOrder;
+import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.geotools.styling.SLD;
 import org.geotools.styling.Style;
-import org.geotools.styling.StyleFactory;
+import org.jaitools.numeric.SampleStats;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.feature.type.AttributeDescriptor;
-import org.opengis.filter.FilterFactory2;
 import org.opengis.geometry.Envelope;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
@@ -51,31 +62,15 @@ import xyz.geosure.roadgis.utils.csv.CSVDataStoreFactory;
 
 
 @SuppressWarnings("serial")
-public class AddLayerAction extends AbstractAction implements ActionListener{ 
+public class LayerAddAction extends AbstractAction implements ActionListener{ 
 	private RoadGISApplication app = null;
-
-	/*
-	 * Factories that we will use to create style and filter objects
-	 */
-	private StyleFactory sf = CommonFactoryFinder.getStyleFactory();
-	private FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2();
-
-	/*
-	 * Some default style variables
-	 */
-	private static final Color LINE_COLOUR = Color.BLUE;
-	private static final Color FILL_COLOUR = Color.CYAN;
-	private static final Color SELECTED_COLOUR = Color.YELLOW;
-	private static final float OPACITY = 1.0f;
-	private static final float LINE_WIDTH = 1.0f;
-	private static final float POINT_SIZE = 10.0f;
 
 	private String sourceDataFileFilepath = "";
 	private SimpleFeatureSource featureSource;
 	private String geometryAttributeName;
 	private DataStore store = null;
 
-	public AddLayerAction(RoadGISApplication app) {
+	public LayerAddAction(RoadGISApplication app) {
 		this.app = app;
 	}
 
@@ -97,6 +92,7 @@ public class AddLayerAction extends AbstractAction implements ActionListener{
 				System.out.println("Getting GIS Data from : " + fullpath) ;
 				sourceDataFileFilepath = fullpath;
 				addLayer();
+				fd.dispose();
 			}
 			//app.getHorizontalDesign().repaint();
 		}catch (Exception e){
@@ -132,7 +128,7 @@ public class AddLayerAction extends AbstractAction implements ActionListener{
 					SimpleFeatureType type = store.getSchema(file_minus_extension);
 					//Style style = SLD.createSimpleStyle(store.getSchema(file_minus_extension));
 					Style style = SLD.createSimpleStyle(store.getSchema(file_minus_extension));
-					
+
 					/*
 		 	        if (!(featureSource instanceof SimpleFeatureStore)) {
 		 	            throw new IllegalStateException("Modification not supported");
@@ -150,10 +146,10 @@ public class AddLayerAction extends AbstractAction implements ActionListener{
 						System.out.print((descriptor.isNillable() ? "nillable" : "mandatory") + ")");
 						System.out.print(" type: " + descriptor.getType().getName());
 						System.out.println(" binding: " + descriptor.getType().getBinding().getSimpleName());
-						
+
 					}
 
-					
+
 					FeatureLayer layer = new FeatureLayer(featureSource, style);
 					layer.setTitle(file_minus_extension);
 					app.getMapFrame().getMapContent().addLayer(layer);
@@ -163,12 +159,18 @@ public class AddLayerAction extends AbstractAction implements ActionListener{
 					if(geoType == GeomType.POINT ) {
 						app.getHorizontalDesign().setPointsLayer(layer);
 					}
-					
+
 					//app.getMapFrame().getMapContent().setTitle(file_minus_extension);
 					ReferencedEnvelope bounds = layer.getBounds();
 					app.getMapFrame().getMapContent().getViewport().setBounds(bounds);
 
+
+					CoordinateReferenceSystem layerCRS = layer.getFeatureSource().getSchema().getCoordinateReferenceSystem();
+					System.out.println("Layer CRS :" + layerCRS);
 					System.out.print("Bounds:" + bounds);
+					
+					app.getHorizontalDesign().setDefaultCRS(layerCRS);
+					
 					//767075.7611 : 779389.0117, 404396.1281 : 415199.9129
 					//767075.7611, 404396.1281), (779389.0117, 415199.9129
 
@@ -190,30 +192,55 @@ public class AddLayerAction extends AbstractAction implements ActionListener{
 		File file = new File(sourceDataFileFilepath);
 		GeoTiffReader reader;
 		try {
-			Hints hint = new Hints();
+			Hints hints = new Hints();
+			CoordinateReferenceSystem crs;
+			try {
+				crs = CRS.decode(app.getHorizontalDesign().getRoadDesign().getDefaultEPSG());
+			}catch(Exception e) {
+				crs = DefaultGeographicCRS.WGS84;
+			}
+			//hints.put(Hints.DEFAULT_COORDINATE_REFERENCE_SYSTEM, crs );    
+			hints.put(Hints.FORCE_LONGITUDE_FIRST_AXIS_ORDER, Boolean.TRUE);
+			//hints.put(Hints.FORCE_STANDARD_AXIS_DIRECTIONS, Boolean.TRUE);
+			//hints.put(Hints.FORCE_AXIS_ORDER_HONORING, Boolean.TRUE);
 
-			//hint.put(Hints.DEFAULT_COORDINATE_REFERENCE_SYSTEM, crs );    
-			//hint.put(Hints.FORCE_LONGITUDE_FIRST_AXIS_ORDER, Boolean.TRUE);
-			//hint.put(Hints.FORCE_STANDARD_AXIS_DIRECTIONS, Boolean.TRUE);
-			//hint.put(Hints.FORCE_AXIS_ORDER_HONORING, Boolean.TRUE);
-
-			reader = new GeoTiffReader(file, hint);
+			reader = new GeoTiffReader(file, hints);
 
 			GridCoverage2D coverage = (GridCoverage2D) reader.read(null);
 
-			CoordinateReferenceSystem crs = coverage.getCoordinateReferenceSystem();
-			System.out.print("Axis Order:" + CRS.getAxisOrder(crs));
+			CoordinateReferenceSystem coverageCRS = coverage.getCoordinateReferenceSystem();
+			System.out.println("App CRS :" + crs);
+			System.out.println("App Axis Order:" + CRS.getAxisOrder(crs));
+			
+			System.out.println("coverage Axis Order:" + CRS.getAxisOrder(coverageCRS));
 
-			if (CRS.getAxisOrder(crs).equals(AxisOrder.EAST_NORTH)) {
+			if (CRS.getAxisOrder(coverageCRS).equals(AxisOrder.EAST_NORTH)) {
 				System.setProperty("org.geotools.referencing.forceXY", "true");
 			}
+			
+			Raster raster = coverage.getRenderedImage().getData();
+			double[] data = new double[raster.getHeight()*raster.getWidth()];        
+			raster.getSamples(raster.getMinX(),
+					raster.getMinY(),
+					raster.getWidth(), 
+					raster.getHeight(), 0, data);
+
+			float min = (float) SampleStats.min(ArrayUtils.toObject(data), true);
+			float max = (float) SampleStats.max(ArrayUtils.toObject(data), true);
+			System.out.println("Min:" + min + ", Max:" + max);
+
+			//GridCoverageLayer interpolatedLayer = new GridCoverageLayer(coverage, GeoUtils.createPseudocolorStyle(min, max, 5));
 			GridCoverageLayer interpolatedLayer = new GridCoverageLayer(coverage, GeoUtils.getRasterStyle());
 			interpolatedLayer.setTitle(file.getName());
 
 			app.getMapContent().addLayer(interpolatedLayer);
 
+			int currentPosition = app.getMapContent().layers().indexOf(interpolatedLayer);
+			System.out.println("current Layer Position:" + currentPosition);			
+			app.getMapContent().moveLayer(currentPosition, 0);//Moves to the Lowest Position to prevent Oclusion
+
 			Envelope env = coverage.getEnvelope();
-			System.out.print("Envelope:" + env);
+			System.out.println("Bounds:" + interpolatedLayer.getBounds());
 
 			app.getHorizontalDesign().setDEMLayer(interpolatedLayer);
 

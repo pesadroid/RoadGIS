@@ -1,5 +1,15 @@
 package xyz.geosure.roadgis.actions;
 
+/*
+ * LayerInterpolateAction.java
+ * 
+ * This Action takes a layer with a set of points and performes interpolation using the BarnesSurface algorithm.
+ * The resulting grid is then saved as a GeoTIFF file. 
+ * 
+ * Created on March 21, 2018, Felix Kiptum <kiptum@pesadroid.com>
+ * 
+ * 
+ */
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -41,7 +51,7 @@ import xyz.geosure.roadgis.utils.GeoUtils;
 
 
 @SuppressWarnings("serial")
-public class InterpolatePointsAction extends AbstractAction implements ActionListener{ 
+public class LayerInterpolateAction extends AbstractAction implements ActionListener{ 
 	private RoadGISApplication app = null;
 
 	JComboBox jLayersList;
@@ -53,7 +63,7 @@ public class InterpolatePointsAction extends AbstractAction implements ActionLis
 	String selectedLayer;
 	String selectedResolution;
 
-	public InterpolatePointsAction(RoadGISApplication app) {
+	public LayerInterpolateAction(RoadGISApplication app) {
 		this.app = app;
 	}
 
@@ -98,10 +108,10 @@ public class InterpolatePointsAction extends AbstractAction implements ActionLis
 					JOptionPane.DEFAULT_OPTION,
 					null,options, null);
 
-			jOptionsPane.add(new JLabel("Which Attribute should be Interpolated?"));
+			jOptionsPane.add(new JLabel("Which Attribute should be Interpolated?", JLabel.LEFT));
 			jOptionsPane.add(jLayersList);
 
-			jOptionsPane.add(new JLabel("Please Enter the Resolution of the Interpolation (in feet or metres depending on settings)"));
+			jOptionsPane.add(new JLabel("Please Enter the Resolution of the Interpolation (in feet or metres depending on settings)", JLabel.LEFT));
 			NumberFormat format = NumberFormat.getInstance();
 			NumberFormatter formatter = new NumberFormatter(format);
 			formatter.setValueClass(Double.class);
@@ -145,8 +155,8 @@ public class InterpolatePointsAction extends AbstractAction implements ActionLis
 							if (fileChooser.showSaveDialog(app) == JFileChooser.APPROVE_OPTION) {
 								File file = fileChooser.getSelectedFile();
 								// save to file
-								GeoTiffWriter writer = new GeoTiffWriter(file);
 								
+								GeoTiffWriter writer = new GeoTiffWriter(file);
 								writer.write(grid, null);
 								writer.dispose();
 							}
@@ -228,13 +238,22 @@ public class InterpolatePointsAction extends AbstractAction implements ActionLis
 
 				ReferencedEnvelope bounds = features.getBounds();
 				double aspectRatio = bounds.getHeight() / bounds.getWidth();
-				int width = 1000;
+				int width =  (int) (bounds.getWidth()/resolution);
 				int height = (int) (aspectRatio * width);
 
+				System.out.println("bounds.getWidth():" + bounds.getWidth() + ", bounds.getHeight():" + bounds.getHeight());
 				System.out.println("Width:" + width + ", height:" + height);
 				System.out.println("bounds:" + bounds);
 				
-				Map<String, Object> input = new KVP("data", features, "valueAttr", attributeName, "scale", 1000, "queryBuffer", 1000, "outputBBOX", bounds, "outputWidth", width, "outputHeight", height);
+				Map<String, Object> input = new KVP("data", features, 
+													"valueAttr", attributeName, 
+													"scale", resolution, 
+													"passes", 3, 
+													"pixelsPerCell", 4,
+													"queryBuffer", 10*resolution, 
+													"outputBBOX", bounds, 
+													"outputWidth", width, 
+													"outputHeight", height);
 				org.geotools.process.Progress working = engine.submit(process, input);
 
 				Map<String, Object> result = null;

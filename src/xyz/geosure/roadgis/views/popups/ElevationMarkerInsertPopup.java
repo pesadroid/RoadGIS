@@ -120,7 +120,7 @@ public class ElevationMarkerInsertPopup extends PopupWindow{
 						y = ptf.getY() ;
 						app.getHorizontalDesign().getRoadDesign().getElevationMarks().get(i).setLocation(new GeometryFactory().createPoint(new Coordinate(x, y) ));
 						app.getHorizontalDesign().getRoadDesign().getElevationMarks().get(i).setElevation(app.getHorizontalDesign().getRoadDesign().getElevationMarks().get(i-1).getElevation()) ;
-						app.getHorizontalDesign().getRoadDesign().getElevationMarks().get(i).setSegmentType(app.getHorizontalDesign().getRoadDesign().getElevationMarks().get(i-1).getSegmentType()) ;
+						app.getHorizontalDesign().getRoadDesign().getElevationMarks().get(i).setMarkerType(app.getHorizontalDesign().getRoadDesign().getElevationMarks().get(i-1).getMarkerType()) ;
 						app.getHorizontalDesign().getRoadDesign().getElevationMarks().get(i).setDistance(app.getHorizontalDesign().getRoadDesign().getElevationMarks().get(i-1).getDistance()) ;
 						app.getHorizontalDesign().getRoadDesign().getElevationMarks().get(i).setParentIndex(app.getHorizontalDesign().getRoadDesign().getElevationMarks().get(i-1).getParentIndex()) ;
 						app.getHorizontalDesign().getRoadDesign().getElevationMarks().get(i).setGrade(app.getHorizontalDesign().getRoadDesign().getElevationMarks().get(i-1).getGrade()) ;
@@ -130,7 +130,7 @@ public class ElevationMarkerInsertPopup extends PopupWindow{
 					app.getHorizontalDesign().getRoadDesign().getElevationMarks().get(sInfo.insert).setLocation(app.getHorizontalDesign().getRoadDesign().getCurrentElevationMarker());
 					app.getHorizontalDesign().getRoadDesign().getElevationMarks().get(sInfo.insert).setElevation(sInfo.elevation);
 					app.getHorizontalDesign().getRoadDesign().getElevationMarks().get(sInfo.insert).setParentIndex(sInfo.parentId);
-					app.getHorizontalDesign().getRoadDesign().getElevationMarks().get(sInfo.insert).setSegmentType(segment_type);
+					app.getHorizontalDesign().getRoadDesign().getElevationMarks().get(sInfo.insert).setMarkerType(segment_type);
 					
 					// save # of data in log buffer, no undo option
 					//push2MarkLogBuffer(myDB.getElevationMarkCount());
@@ -139,7 +139,7 @@ public class ElevationMarkerInsertPopup extends PopupWindow{
 					//repaint();
 				} else {
 					// txtEle is empty
-					app.getHorizontalDesign().popMessageBox("Elevation Data", "Please specify station elevation!");
+					app.getUIActionsHandler().popMessageBox("Elevation Data", "Please specify station elevation!");
 				}
 			}   // action performed
 		} ;

@@ -104,8 +104,8 @@ public class RoadDesign {
     public static final float FT2M = 0.3048f       ;               // convert from foot to meter
     public static final float MPH2Kmh = 1.609344f   ;              // convert from MPH to Km/h
 
-	private String defaultEPSG = "EPSG:4326";//Default EPSG
-	//private String defaultEPSG = "EPSG:32736";//Default EPSG
+	//private String defaultEPSG = "EPSG:4326";//Default EPSG
+	private String defaultEPSG = "EPSG:32736";//Default EPSG
 	private float snapDistance = 10.0f;//20m
 	private double gridBuffer = 2000.0;//1km buffer
 	private double gridVertexSpacing = 500.0;//500m 
@@ -271,7 +271,7 @@ public class RoadDesign {
 		this.hAlignMarks.add(marker);
 	}
 
-	public int getHorizontalAlignmentMarkCount() {
+	public int getNumberOfHorizontalAlignmentMarks() {
 		return hAlignMarks.size();
 	}
 

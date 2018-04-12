@@ -48,10 +48,10 @@ public class ClearAllPopup extends PopupWindow{
 		                        myDB.gethRoadData()[i].RESET();
 		                    }
 				 */
-				app.getHorizontalDesign().sethRoadDataCount(0);
+				//app.getHorizontalDesign().sethRoadDataCount(0);
 				//app.getHorizontalDesign().getRoadDesign().setHorizontalAlignmentMarkCount(0);
 				//app.getHorizontalDesign().getRoadDesign().setElevationMarkCount(0);
-				app.getHorizontalDesign().push2SegLogBuffer(app.getHorizontalDesign().gethRoadDataCount());
+				app.getHorizontalDesign().push2SegLogBuffer(app.getHorizontalDesign().getHorizontalAlignmentMarkCount());
 				app.getHorizontalDesign().push2MarkLogBuffer(app.getHorizontalDesign().getRoadDesign().getElevationMarkCount());
 				popup.dispose() ;
 				//repaint();

@@ -1,5 +1,18 @@
 package xyz.geosure.roadgis;
 
+/*
+ * RoadGISApplication.java
+ * 
+ * This is the entry point for the RoadGIS Application. 
+ * In this module, we declare the horizontal design controller, the vertical design
+ * controller as well as the UI actions controller. The main activity here is the declarations
+ * and establishment of the Windows for the application.
+ *
+ * Created on March 21, 2018, Felix Kiptum
+ * 
+ * 
+ */
+
 import java.awt.event.WindowEvent;
 import java.net.URL;
 
@@ -28,6 +41,8 @@ public class RoadGISApplication extends JMapFrame {
 	public  RoadGISApplication()    {
 		super(map);
 		setTitle("Road Design GIS" );
+
+		System.setProperty("org.geotools.referencing.forceXY", "true");
 		
 		// Initialize the JMapFrame 
 		enableLayerTable( true );
@@ -54,6 +69,7 @@ public class RoadGISApplication extends JMapFrame {
 		uiActionsHandler = new UIActionsController(app);		
 		uiActionsHandler.initializeToolbar();		
 		uiActionsHandler.initializeMenu();
+		uiActionsHandler.initializeStatusbar();
 
 		if (app.getMouseListeners().length==0) {
 			// add mouse listener if not already included
@@ -68,13 +84,13 @@ public class RoadGISApplication extends JMapFrame {
 		hDesign.setContourImage(null);
 		//hDesign.toolbarIndex=0 ;
 		// clear all DBs
-		for (i=0; i<hDesign.getRoadDesign().getHorizontalAlignmentMarkCount(); i++) {
+		for (i=0; i<hDesign.getRoadDesign().getNumberOfHorizontalAlignmentMarks(); i++) {
 			hDesign.getRoadDesign().getHorizontalAlignmentMarks().get(i).reset();
 		}
 		for (i=0; i<hDesign.getRoadDesign().getElevationMarkCount(); i++) {
 			hDesign.getRoadDesign().getElevationMarks().get(i).reset();
 		}
-		for (i=0; i<hDesign.gethRoadDataCount();i++) {
+		for (i=0; i<hDesign.getHorizontalAlignmentMarkCount();i++) {
 			hDesign.getRoadDesign().getHorizontalAlignmentSegments().get(i).reset();
 		}
 
@@ -154,7 +170,7 @@ public class RoadGISApplication extends JMapFrame {
 		return getClass().getResource(resource);
 	}
 
-	public static UIActionsController getUiActionsHandler() {
+	public static UIActionsController getUIActionsHandler() {
 		return uiActionsHandler;
 	}
 

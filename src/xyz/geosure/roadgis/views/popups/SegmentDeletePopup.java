@@ -42,17 +42,17 @@ public class SegmentDeletePopup extends PopupWindow{
 			ActionListener frame_msgbox_yes_listener = new ActionListener() {
 				public void actionPerformed(ActionEvent aev) {
 					int i, j ;
-					for (i=0; i<app.getHorizontalDesign().gethRoadDataCount(); i++) {
+					for (i=0; i<app.getHorizontalDesign().getHorizontalAlignmentMarkCount(); i++) {
 						// check if segment selected
 						if (app.getHorizontalDesign().getRoadDesign().getHorizontalAlignmentSegments().get(i).isSelected()) {
 							// remove
 							app.getHorizontalDesign().getRoadDesign().getHorizontalAlignmentSegments().get(i).delete();
 							// removed associated tangent points, 12/21/07, chenfu
-							for (j = 0; j< app.getHorizontalDesign().getRoadDesign().getHorizontalAlignmentMarkCount(); j++) {
+							for (j = 0; j< app.getHorizontalDesign().getRoadDesign().getNumberOfHorizontalAlignmentMarks(); j++) {
 								if ((int)app.getHorizontalDesign().getRoadDesign().getHorizontalAlignmentMarks().get(j).getParentIndex()==i) {
 									// remove tangent index j
 									new TangentDeletePopup(app, j, caption, message).removeTangentPair(j) ;
-									j=app.getHorizontalDesign().getRoadDesign().getHorizontalAlignmentMarkCount();
+									j=app.getHorizontalDesign().getRoadDesign().getNumberOfHorizontalAlignmentMarks();
 									break ;
 								}
 

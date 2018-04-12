@@ -55,7 +55,7 @@ public class TangentDataFrame extends FrameWindow{
 				new ActionListener() {
 					public void actionPerformed(ActionEvent aev) {
 						tangent_saveData();  
-						app.getHorizontalDesign().getHorizontalStatusBar().setStatusBarText(0, "Save PC, PT Data") ;
+						app.getUIActionsHandler().setStatusBarText(0, "Save PC, PT Data") ;
 					} // actionPerformed
 				} // ActionListener
 				) ; // file save report
@@ -63,7 +63,7 @@ public class TangentDataFrame extends FrameWindow{
 				new ActionListener() {
 					public void actionPerformed(ActionEvent aev) {
 						tangent_printData();  
-						app.getHorizontalDesign().getHorizontalStatusBar().setStatusBarText(0, "Print PC, PT Data") ;
+						app.getUIActionsHandler().setStatusBarText(0, "Print PC, PT Data") ;
 					} // actionPerformed
 				} // ActionListener
 				) ; // file save report
@@ -82,10 +82,10 @@ public class TangentDataFrame extends FrameWindow{
 				PrintText.StrFormat(0,"POS Y", fieldSize[2]) +
 				PrintText.StrFormat(0,"Curve ID", fieldSize[3]) +
 				PrintText.StrFormat(0,"Type", fieldSize[4]) + "\n" ;
-		String[][] data = new String[app.getHorizontalDesign().getRoadDesign().getHorizontalAlignmentMarkCount()][headers.length];
+		String[][] data = new String[app.getHorizontalDesign().getRoadDesign().getNumberOfHorizontalAlignmentMarks()][headers.length];
 		int i;
 		float myScale = (float)app.getHorizontalDesign().getRoadDesign().getContourImageResolution() / (float)app.getHorizontalDesign().getRoadDesign().getContourScale();
-		for (i=0;i<app.getHorizontalDesign().getRoadDesign().getHorizontalAlignmentMarkCount(); i++) {
+		for (i=0;i<app.getHorizontalDesign().getRoadDesign().getNumberOfHorizontalAlignmentMarks(); i++) {
 			data[i][0] = ConversionUtils.CStr(i + 1) ;
 			data[i][1] = ConversionUtils.CStr(Math.round(app.getHorizontalDesign().getRoadDesign().getHorizontalAlignmentMarks().get(i).getLocation().getX()/myScale*1000f)/1000f) ;
 			data[i][2] = ConversionUtils.CStr(Math.round(app.getHorizontalDesign().getRoadDesign().getHorizontalAlignmentMarks().get(i).getLocation().getY()/myScale*1000f)/1000f) ;
@@ -153,7 +153,7 @@ public class TangentDataFrame extends FrameWindow{
 		catch (Exception e){
 			//do nothing
 			System.out.println("Print PC, PT Data:"+e.toString());
-			app.getHorizontalDesign().getHorizontalStatusBar().setStatusBarText(1, "Error: Print PC, PT Data, "+e.toString()) ;
+			app.getUIActionsHandler().setStatusBarText(1, "Error: Print PC, PT Data, "+e.toString()) ;
 		} // try
 
 	}// tangent print data
@@ -178,7 +178,7 @@ public class TangentDataFrame extends FrameWindow{
 		catch (Exception e){
 			//do nothing
 			System.out.println("Save PC, PT Data File:"+e.toString());
-			app.getHorizontalDesign().getHorizontalStatusBar().setStatusBarText(1, "Error: Saving PC, PT Data, "+e.toString()) ;
+			app.getUIActionsHandler().setStatusBarText(1, "Error: Saving PC, PT Data, "+e.toString()) ;
 		} // try
 
 	}// tangent save data

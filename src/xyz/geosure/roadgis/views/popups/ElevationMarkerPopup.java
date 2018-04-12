@@ -115,7 +115,7 @@ public class ElevationMarkerPopup extends PopupWindow{
 							app.getHorizontalDesign().getRoadDesign().getElevationMarks().get(index).setLocation(app.getHorizontalDesign().getRoadDesign().getCurrentElevationMarker());
 							app.getHorizontalDesign().getRoadDesign().getElevationMarks().get(index).setElevation(sInfo.elevation);
 							app.getHorizontalDesign().getRoadDesign().getElevationMarks().get(index).setParentIndex(sInfo.parentId);
-							app.getHorizontalDesign().getRoadDesign().getElevationMarks().get(index).setSegmentType(segment_type);
+							app.getHorizontalDesign().getRoadDesign().getElevationMarks().get(index).setMarkerType(segment_type);
 							
 							
 						} else {
@@ -132,7 +132,7 @@ public class ElevationMarkerPopup extends PopupWindow{
 						//repaint();
 					} else {
 						// txtEle is empty
-						app.getHorizontalDesign().popMessageBox("Elevation Data", "Please specify station elevation!");
+						app.getUIActionsHandler().popMessageBox("Elevation Data", "Please specify station elevation!");
 					}
 				}   // action performed
 			} ;
@@ -239,7 +239,7 @@ public class ElevationMarkerPopup extends PopupWindow{
 		boolean acceptElevation = false ;
 		int min_diff_index = -1 ;
 		min_diff = 9999f ;
-		for (i=0; i<app.getHorizontalDesign().gethRoadDataCount(); i++) {
+		for (i=0; i<app.getHorizontalDesign().getHorizontalAlignmentMarkCount(); i++) {
 			if (app.getHorizontalDesign().getRoadDesign().getHorizontalAlignmentSegments().get(i).getRadius() > 0) { 
 				// curve segment
 				dist = VectorUtils.distanceOf(app.getHorizontalDesign().getRoadDesign().getHorizontalAlignmentSegments().get(i).getStartPoint(), ptf);
@@ -288,7 +288,7 @@ public class ElevationMarkerPopup extends PopupWindow{
 		int i ;
 		double dist, cosine ;
 		boolean acceptElevation = false;
-		for (i=0; i<app.getHorizontalDesign().gethRoadDataCount(); i++) {
+		for (i=0; i<app.getHorizontalDesign().getHorizontalAlignmentMarkCount(); i++) {
 			if (app.getHorizontalDesign().getRoadDesign().getHorizontalAlignmentSegments().get(i).getRadius() < 0) { 
 				// line segment
 				dist = VectorUtils.distanceOf(app.getHorizontalDesign().getRoadDesign().getHorizontalAlignmentSegments().get(i).getStartPoint(), ptf);

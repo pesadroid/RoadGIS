@@ -226,8 +226,8 @@ public class VerticalDesignController extends DoubleBufferedPanel     implements
 				lastMark = roadDesign.getElevationMarks().get(i - 1).getLocation();
 				//System.out.println("X="+ConversionUtils.CStr(lastMark.getX())+", Y="+ConversionUtils.CStr(lastMark.getY())+", scale="+ConversionUtils.CStr(myDB.imageScale));
 
-				lastMarkType = roadDesign.getElevationMarks().get(i-1).getSegmentType();
-				switch (roadDesign.getElevationMarks().get(i).getSegmentType()) {
+				lastMarkType = roadDesign.getElevationMarks().get(i-1).getMarkerType();
+				switch (roadDesign.getElevationMarks().get(i).getMarkerType()) {
 				case LINE:  // line
 					// linear distance
 					dist = VectorUtils.distanceOf(lastMark, roadDesign.getElevationMarks().get(i).getLocation()) / roadDesign.getImageScale();
@@ -2066,7 +2066,7 @@ public class VerticalDesignController extends DoubleBufferedPanel     implements
 					roadDesign.getVerticalConstructMarks().get(i).setLocation(new GeometryFactory().createPoint(new Coordinate(x, y)));
 					roadDesign.getVerticalConstructMarks().get(i).setElevation(br.readFloat());
 					roadDesign.getVerticalConstructMarks().get(i).setParentIndex(br.readByte());
-					roadDesign.getVerticalConstructMarks().get(i).setSegmentType(MarkerType.values()[br.readByte()]);
+					roadDesign.getVerticalConstructMarks().get(i).setMarkerType(MarkerType.values()[br.readByte()]);
 					roadDesign.getVerticalConstructMarks().get(i).setDistance(br.readFloat());
 					roadDesign.getVerticalConstructMarks().get(i).setGrade(br.readFloat());
 				}
@@ -2168,7 +2168,7 @@ public class VerticalDesignController extends DoubleBufferedPanel     implements
 					w.writeDouble(roadDesign.getVerticalConstructMarks().get(i).getLocation().getY());
 					w.writeDouble(roadDesign.getVerticalConstructMarks().get(i).getElevation());
 					w.writeByte(roadDesign.getVerticalConstructMarks().get(i).getParentIndex());
-					w.writeByte(roadDesign.getVerticalConstructMarks().get(i).getSegmentType().ordinal());
+					w.writeByte(roadDesign.getVerticalConstructMarks().get(i).getMarkerType().ordinal());
 					w.writeDouble(roadDesign.getVerticalConstructMarks().get(i).getDistance());
 					w.writeDouble(roadDesign.getVerticalConstructMarks().get(i).getGrade());
 				}   //Next
@@ -2624,7 +2624,7 @@ public class VerticalDesignController extends DoubleBufferedPanel     implements
 	public int findTangentDBIndex(int parent) {
 		int i, foundIdx ;
 		foundIdx = -1;
-		for (i = 0 ; i<roadDesign.getHorizontalAlignmentMarkCount(); i++) {
+		for (i = 0 ; i<roadDesign.getNumberOfHorizontalAlignmentMarks(); i++) {
 			if (roadDesign.getHorizontalAlignmentMarks().get(i).getParentIndex() == parent) { 
 				foundIdx = i;
 				break;
@@ -2650,7 +2650,7 @@ public class VerticalDesignController extends DoubleBufferedPanel     implements
 		ProgressBar1.show();
 		// init starting point data
 		lastMark = roadDesign.getElevationMarks().get(0).getLocation();
-		lastMarkType = roadDesign.getElevationMarks().get(0).getSegmentType();
+		lastMarkType = roadDesign.getElevationMarks().get(0).getMarkerType();
 		x1 = lastMark.getX() / roadDesign.getImageScale();
 		y1 = lastMark.getY() / roadDesign.getImageScale();
 		//       frmProgress.ProgressBar1.Maximum = elevationMarkCount
@@ -2659,7 +2659,7 @@ public class VerticalDesignController extends DoubleBufferedPanel     implements
 			ProgressBar1.updateProgress();
 			x2 = roadDesign.getElevationMarks().get(i).getLocation().getX() / roadDesign.getImageScale(); // ft/m
 			y2 = roadDesign.getElevationMarks().get(i).getLocation().getY() / roadDesign.getImageScale();
-			switch(roadDesign.getElevationMarks().get(i).getSegmentType()) {
+			switch(roadDesign.getElevationMarks().get(i).getMarkerType()) {
 			case LINE:  // line
 				// linear distance
 				dist = VectorUtils.distanceOf(lastMark, roadDesign.getElevationMarks().get(i).getLocation()) / roadDesign.getImageScale();
@@ -2747,7 +2747,7 @@ public class VerticalDesignController extends DoubleBufferedPanel     implements
 			x1 = x2;
 			y1 = y2;
 			lastMark = roadDesign.getElevationMarks().get(i).getLocation();
-			lastMarkType = roadDesign.getElevationMarks().get(i).getSegmentType();
+			lastMarkType = roadDesign.getElevationMarks().get(i).getMarkerType();
 
 		}   //Next i
 		// save last data point

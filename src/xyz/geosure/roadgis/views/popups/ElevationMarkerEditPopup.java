@@ -73,7 +73,7 @@ public class ElevationMarkerEditPopup extends PopupWindow{
 						app.getHorizontalDesign().getRoadDesign().getElevationMarks().get(index).setLocation(app.getHorizontalDesign().getRoadDesign().getCurrentElevationMarker())
 																								.setElevation(sInfo.elevation)
 																								.setParentIndex(sInfo.parentId)
-																								.setSegmentType(segment_type);
+																								.setMarkerType(segment_type);
 					} 
 					/*else {
                             myDBgetElevationMarks().get(myDB.getElevationMarkCount()] = new MarkerDB();
@@ -88,7 +88,7 @@ public class ElevationMarkerEditPopup extends PopupWindow{
 					//repaint();
 				} else {
 					// txtEle elevation field is empty
-					app.getHorizontalDesign().popMessageBox("Elevation Data", "Please specify station elevation!");
+					app.getUIActionsHandler().popMessageBox("Elevation Data", "Please specify station elevation!");
 				}
 			}   // action performed
 		} ;
@@ -105,7 +105,7 @@ public class ElevationMarkerEditPopup extends PopupWindow{
 					y = ptf.getY() ;
 					app.getHorizontalDesign().getRoadDesign().getElevationMarks().get(i).setLocation(new GeometryFactory().createPoint(new Coordinate(x, y))) ;
 					app.getHorizontalDesign().getRoadDesign().getElevationMarks().get(i).setElevation(app.getHorizontalDesign().getRoadDesign().getElevationMarks().get(i+1).getElevation()) ;
-					app.getHorizontalDesign().getRoadDesign().getElevationMarks().get(i).setSegmentType(app.getHorizontalDesign().getRoadDesign().getElevationMarks().get(i+1).getSegmentType()) ;
+					app.getHorizontalDesign().getRoadDesign().getElevationMarks().get(i).setMarkerType(app.getHorizontalDesign().getRoadDesign().getElevationMarks().get(i+1).getMarkerType()) ;
 					app.getHorizontalDesign().getRoadDesign().getElevationMarks().get(i).setDistance(app.getHorizontalDesign().getRoadDesign().getElevationMarks().get(i+1).getDistance()) ;
 					app.getHorizontalDesign().getRoadDesign().getElevationMarks().get(i).setParentIndex(app.getHorizontalDesign().getRoadDesign().getElevationMarks().get(i+1).getParentIndex()) ;
 					app.getHorizontalDesign().getRoadDesign().getElevationMarks().get(i).setGrade(app.getHorizontalDesign().getRoadDesign().getElevationMarks().get(i+1).getGrade()) ;

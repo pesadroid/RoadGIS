@@ -18,6 +18,9 @@ import org.geotools.map.FeatureLayer;
 import org.geotools.map.MapContent;
 import org.geotools.referencing.CRS;
 import org.geotools.styling.ChannelSelection;
+import org.geotools.styling.ColorMap;
+import org.geotools.styling.ColorMapEntryImpl;
+import org.geotools.styling.ColorMapImpl;
 import org.geotools.styling.ContrastEnhancement;
 import org.geotools.styling.ContrastEnhancementImpl;
 import org.geotools.styling.FeatureTypeStyle;
@@ -279,12 +282,12 @@ public class GeoUtils {
 
 
 		Mark circle = sb.createMark(StyleBuilder.MARK_SQUARE, Color.GREEN);
-		
+
 		Graphic graph2 = sb.createGraphic(null, circle, null, 1, 4, 0);
 		PointSymbolizer pointSymbolizer = sb.createPointSymbolizer(graph2);
 
 		FeatureTypeStyle fts = sb.createFeatureTypeStyle("labelPointFeature", new Symbolizer[] { textSymbolizer, pointSymbolizer });
-		
+
 		//Style style = builder.createStyle(pointSymbolizer);
 		//style.addFeatureTypeStyle(fts);
 		return fts;
@@ -301,6 +304,47 @@ public class GeoUtils {
 		final RasterSymbolizer symbolizer = sf.getDefaultRasterSymbolizer();
 		return SLD.wrapSymbolizers(symbolizer);
 	}
+
+
+	public static Style createPseudocolorStyle(float min, float max, int categories) {
+
+		ColorMap colorMap = new ColorMapImpl();
+		Color startColor = Color.ORANGE;
+		Color endColor = Color.GREEN;
+		
+		for(int i = 0; i< categories; i++) {
+
+			float value = min + i*(max-min)/categories;
+			float hue =0.125f + (0.75f * ((value - min) / (max - min)));//Adjust the hue to lie within the range 0.125 : 0.875
+
+	        int rgb = Color.HSBtoRGB(hue, 0.8f, 0.8f);
+	        Color colour= new Color(rgb);
+	        
+			int category = i*2;
+
+
+			ColorMapEntryImpl entry1 = new ColorMapEntryImpl();
+			entry1.setColor(ff.literal(colour));
+			entry1.setLabel("Category " + i);
+			entry1.setOpacity(ff.literal(0.42));
+			entry1.setQuantity(ff.literal(value));
+			colorMap.addColorMapEntry(entry1);
+		}
+
+		colorMap.setType(ColorMap.TYPE_INTERVALS);
+
+		// Now we create a RasterSymbolizer using the selected channels
+		SelectedChannelType[] sct = new SelectedChannelType[1];
+		ContrastEnhancement ce = sf.contrastEnhancement((ff).literal(1.0), ContrastMethod.NORMALIZE);
+		sct[0] = sf.createSelectedChannelType(String.valueOf(1), ce);
+		RasterSymbolizer sym = sf.getDefaultRasterSymbolizer();
+		sym.setColorMap(colorMap);
+		ChannelSelection sel = sf.channelSelection(sct[0]);
+		sym.setChannelSelection(sel);
+
+		return SLD.wrapSymbolizers(sym);
+	}
+
 	/**
 	 * This method examines the names of the sample dimensions in the provided
 	 * coverage looking for "red...", "green..." and "blue..." (case insensitive

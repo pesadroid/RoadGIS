@@ -34,14 +34,14 @@ public class FileSaveAction  extends AbstractAction implements ActionListener{
 				saveDesignFile() ;
 
 				frame_saveDesign.dispose() ;
-				app.getHorizontalDesign().view_RESET();
+				app.getUIActionsHandler().view_RESET();
 				//repaint();
 			}
 		} ;
 		frame_msgbox_no_listener = new ActionListener() {
 			public void actionPerformed(ActionEvent aev) {
 				frame_saveDesign.dispose() ;
-				app.getHorizontalDesign().view_RESET();
+				app.getUIActionsHandler().view_RESET();
 				if(exitFlag) {
 					System.exit(0);
 				}
@@ -110,8 +110,8 @@ public class FileSaveAction  extends AbstractAction implements ActionListener{
 				int i, actualDataSize ;
 				// 11/8/06
 				// save only undeleted items
-				actualDataSize = app.getHorizontalDesign().gethRoadDataCount() ;
-				for (i=0;i<app.getHorizontalDesign().gethRoadDataCount();i++) {
+				actualDataSize = app.getHorizontalDesign().getHorizontalAlignmentMarkCount() ;
+				for (i=0;i<app.getHorizontalDesign().getHorizontalAlignmentMarkCount();i++) {
 					if (app.getHorizontalDesign().getRoadDesign().getHorizontalAlignmentSegments().get(i).isDeleted()) {
 						actualDataSize-- ;
 					}   // if item deleted
@@ -120,7 +120,7 @@ public class FileSaveAction  extends AbstractAction implements ActionListener{
 				w.flush();
 				int saved_count = 0 ;
 				int[] lookupRef = new int[actualDataSize] ;
-				for (i=0;i<app.getHorizontalDesign().gethRoadDataCount();i++) {
+				for (i=0;i<app.getHorizontalDesign().getHorizontalAlignmentMarkCount();i++) {
 					if (!app.getHorizontalDesign().getRoadDesign().getHorizontalAlignmentSegments().get(i).isDeleted()) {   // 11/8/06
 						// item not deleted
 						w.writeDouble(app.getHorizontalDesign().getRoadDesign().getHorizontalAlignmentSegments().get(i).getStartPoint().getX());
@@ -147,18 +147,18 @@ public class FileSaveAction  extends AbstractAction implements ActionListener{
 					w.writeDouble(app.getHorizontalDesign().getRoadDesign().getElevationMarks().get(i).getElevation());
 					oldParentID = app.getHorizontalDesign().getRoadDesign().getElevationMarks().get(i).getParentIndex() ; // 3/1/07
 					w.writeByte(lookupParentIndex(oldParentID, lookupRef));         // 3/1/07
-					w.writeByte(app.getHorizontalDesign().getRoadDesign().getElevationMarks().get(i).getSegmentType().ordinal());
+					w.writeByte(app.getHorizontalDesign().getRoadDesign().getElevationMarks().get(i).getMarkerType().ordinal());
 					w.flush();
 				}
 				// 6 - save horizontal alignment landmarks
-				w.writeInt(app.getHorizontalDesign().getRoadDesign().getHorizontalAlignmentMarkCount());
-				for (i=0; i<app.getHorizontalDesign().getRoadDesign().getHorizontalAlignmentMarkCount();i++) {
+				w.writeInt(app.getHorizontalDesign().getRoadDesign().getNumberOfHorizontalAlignmentMarks());
+				for (i=0; i<app.getHorizontalDesign().getRoadDesign().getNumberOfHorizontalAlignmentMarks();i++) {
 					w.writeDouble(app.getHorizontalDesign().getRoadDesign().getHorizontalAlignmentMarks().get(i).getLocation().getX());
 					w.writeDouble(app.getHorizontalDesign().getRoadDesign().getHorizontalAlignmentMarks().get(i).getLocation().getY());
 					w.writeDouble(app.getHorizontalDesign().getRoadDesign().getHorizontalAlignmentMarks().get(i).getElevation());
 					oldParentID = app.getHorizontalDesign().getRoadDesign().getHorizontalAlignmentMarks().get(i).getParentIndex() ;    // 3/1/07
 					w.writeByte(lookupParentIndex(oldParentID, lookupRef));         // 3/1/07
-					w.writeByte(app.getHorizontalDesign().getRoadDesign().getHorizontalAlignmentMarks().get(i).getSegmentType().ordinal());
+					w.writeByte(app.getHorizontalDesign().getRoadDesign().getHorizontalAlignmentMarks().get(i).getMarkerType().ordinal());
 					w.flush();
 				}
 				// 7 - save control parameters

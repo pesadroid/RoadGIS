@@ -236,9 +236,9 @@ public class DesignSettingsPopup extends PopupWindow{
 					scaleErr = oldImageScale * app.getHorizontalDesign().getRoadDesign().FT2M / app.getHorizontalDesign().getRoadDesign().getImageScale() ;
 					// update radius
 					//int i ;
-					if (app.getHorizontalDesign().gethRoadDataCount() > 0) { 
+					if (app.getHorizontalDesign().getHorizontalAlignmentMarkCount() > 0) { 
 						double radius ;
-						for (i=0; i<app.getHorizontalDesign().gethRoadDataCount(); i++) {
+						for (i=0; i<app.getHorizontalDesign().getHorizontalAlignmentMarkCount(); i++) {
 							radius = app.getHorizontalDesign().getRoadDesign().getHorizontalAlignmentSegments().get(i).getRadius();
 							if (radius > 0) { 
 								app.getHorizontalDesign().getRoadDesign().getHorizontalAlignmentSegments().get(i).setRadius(radius / app.getHorizontalDesign().getRoadDesign().FT2M * scaleErr);
@@ -286,9 +286,9 @@ public class DesignSettingsPopup extends PopupWindow{
 					scaleErr = oldImageScale / app.getHorizontalDesign().getRoadDesign().FT2M / app.getHorizontalDesign().getRoadDesign().getImageScale() ;
 					// update radius
 					//int i ;
-					if (app.getHorizontalDesign().gethRoadDataCount() > 0) { 
+					if (app.getHorizontalDesign().getHorizontalAlignmentMarkCount() > 0) { 
 						double radius ;
-						for (i=0; i<app.getHorizontalDesign().gethRoadDataCount(); i++) {
+						for (i=0; i<app.getHorizontalDesign().getHorizontalAlignmentMarkCount(); i++) {
 							radius = app.getHorizontalDesign().getRoadDesign().getHorizontalAlignmentSegments().get(i).getRadius();
 							if (radius > 0) { 
 								app.getHorizontalDesign().getRoadDesign().getHorizontalAlignmentSegments().get(i).setRadius(radius * app.getHorizontalDesign().getRoadDesign().FT2M * scaleErr);

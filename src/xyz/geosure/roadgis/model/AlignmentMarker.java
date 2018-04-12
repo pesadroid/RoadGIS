@@ -60,7 +60,7 @@ public class AlignmentMarker {
     public double getElevation(){
         return elevation;
     }
-    public MarkerType getSegmentType() {
+    public MarkerType getMarkerType() {
         return type;
     }
     public AlignmentMarker reset(){    // reset station data
@@ -77,7 +77,7 @@ public class AlignmentMarker {
         elevation = d;
         return this;
     }
-    public AlignmentMarker setSegmentType(MarkerType stype ){
+    public AlignmentMarker setMarkerType(MarkerType stype ){
         type = stype;
         return this;
     }

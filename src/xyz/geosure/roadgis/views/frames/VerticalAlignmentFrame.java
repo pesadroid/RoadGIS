@@ -148,7 +148,7 @@ public class VerticalAlignmentFrame extends FrameWindow{
 
 		app.setVerticalDesign( new VerticalDesignController(app, tbv, sbv)); 
 		app.getVerticalDesign().setRoadDesign(app.getHorizontalDesign().getRoadDesign()) ;
-		app.getVerticalDesign().hRoadDataCount = app.getHorizontalDesign().gethRoadDataCount(); 
+		app.getVerticalDesign().hRoadDataCount = app.getHorizontalDesign().getHorizontalAlignmentMarkCount(); 
 		app.getVerticalDesign().init(); // initialization
 
 		ccv.add("Center",app.getVerticalDesign()); 
@@ -194,7 +194,7 @@ public class VerticalAlignmentFrame extends FrameWindow{
 						}
 						catch (Exception e){
 							//do nothing
-							app.getHorizontalDesign().popMessageBox("Help - Web Content", "Error:"+e.toString()) ;
+							app.getUIActionsHandler().popMessageBox("Help - Web Content", "Error:"+e.toString()) ;
 						} // try
 					} // actionPerformed
 				} // ActionListener
@@ -212,7 +212,7 @@ public class VerticalAlignmentFrame extends FrameWindow{
 						}
 						catch (Exception e){
 							//do nothing
-							app.getHorizontalDesign().getHorizontalStatusBar().setStatusBarText(1, "Error: Manual file "+e.toString()) ;
+							app.getUIActionsHandler().setStatusBarText(1, "Error: Manual file "+e.toString()) ;
 						}   // try
 					}   // actionPerformed
 				}   // ActionListener
@@ -230,7 +230,7 @@ public class VerticalAlignmentFrame extends FrameWindow{
 						}
 						catch (Exception e){
 							//do nothing
-							app.getHorizontalDesign().getHorizontalStatusBar().setStatusBarText(1, "Error: Cortona help file "+e.toString()) ;
+							app.getUIActionsHandler().setStatusBarText(1, "Error: Cortona help file "+e.toString()) ;
 						}   // try
 					}   // actionPerformed
 				}   // ActionListener
@@ -239,7 +239,7 @@ public class VerticalAlignmentFrame extends FrameWindow{
 		help_about.addActionListener(
 				new ActionListener() {
 					public void actionPerformed(ActionEvent aev) {
-						app.getHorizontalDesign().popAbout();
+						app.getUIActionsHandler().popAbout();
 					}    // actionPerformed
 				}  // ActionListener
 				) ; // help_about

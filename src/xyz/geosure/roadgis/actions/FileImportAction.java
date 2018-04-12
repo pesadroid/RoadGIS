@@ -37,7 +37,7 @@ public class FileImportAction extends AbstractAction implements ActionListener{
 				app.getHorizontalDesign().contourImageFilepath =fullpath;
 				app.getHorizontalDesign().setContourImage(app.getToolkit().getImage(fullpath));
 				app.getHorizontalDesign().init(0);
-				app.getHorizontalDesign().view_RESET();
+				app.getUIActionsHandler().view_RESET();
 			}
 			//app.getHorizontalDesign().repaint();
 		}

@@ -13,10 +13,10 @@ import xyz.geosure.roadgis.RoadGISApplication;
 
 
 @SuppressWarnings("serial")
-public class HorizontalMarkerAction extends AbstractAction implements ActionListener{ 
+public class HorizontalMarkerInsertAction extends AbstractAction implements ActionListener{ 
 	private RoadGISApplication app = null;
 
-	public HorizontalMarkerAction(RoadGISApplication app) {
+	public HorizontalMarkerInsertAction(RoadGISApplication app) {
 		this.app = app;
 	}
 

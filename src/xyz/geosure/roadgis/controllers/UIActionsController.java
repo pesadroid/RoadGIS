@@ -6,7 +6,10 @@ package xyz.geosure.roadgis.controllers;
  * Created on March 16, 2006, 8:25 PM
  */
 
+import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -23,24 +26,30 @@ import java.util.Arrays;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JMenuItem;
+import javax.swing.JTextArea;
 import javax.swing.JToolTip;
 
 import org.geotools.swing.event.MapMouseEvent;
 import org.geotools.swing.tool.CursorTool;
 
 import xyz.geosure.roadgis.RoadGISApplication;
-import xyz.geosure.roadgis.actions.AddLayerAction;
+import xyz.geosure.roadgis.actions.LayerAddAction;
 import xyz.geosure.roadgis.actions.ElevationMarkerInsertAction;
 import xyz.geosure.roadgis.actions.HorizontalCurveCreateAction;
 import xyz.geosure.roadgis.actions.HorizontalLineCreateAction;
-import xyz.geosure.roadgis.actions.HorizontalMarkerAction;
+import xyz.geosure.roadgis.actions.HorizontalMarkerInsertAction;
 import xyz.geosure.roadgis.actions.HorizontalSegmentAlignAction;
-import xyz.geosure.roadgis.actions.InterpolatePointsAction;
+import xyz.geosure.roadgis.actions.LayerInterpolateAction;
+import xyz.geosure.roadgis.actions.LayerAddOSMAction;
 import xyz.geosure.roadgis.views.RoadGISMenu;
+import xyz.geosure.roadgis.views.RoadGISPopup;
+import xyz.geosure.roadgis.views.popups.AboutPopup;
+import xyz.geosure.roadgis.views.toolbars.HorizontalStatusbar;
 
 public class UIActionsController implements MouseListener,  MouseMotionListener, KeyListener{
 	public final static String LAYER_IMPORT = "layer_import";
 	public final static String INTERPOLATE = "interpolate"; 
+	public final static String OSM = "osm";
 	public final static String LINE = "Line";
 	public final static String CURVE = "Curve"; 
 	public final static String MODIFY = "modify";
@@ -56,19 +65,69 @@ public class UIActionsController implements MouseListener,  MouseMotionListener,
 	JToolTip myToolTip = new JToolTip();
 
 	private RoadGISMenu appMenu = null;
+	private HorizontalStatusbar horizontalStatusBar;           // status bar
+
 	// 4/21/06 modified
 	private JMenuItem edit_undo  ;               // menu item handled by hDesign methods
 	private JMenuItem edit_redo  ;
 	private JMenuItem edit_delete  ;
 
+	private String msgBox_title = "";
+	private String msgBox_message = "";
+
+	private Runnable runThread0 = null ;    // stop on red light
+	private Thread tSetValign ;
+
+	private boolean popMsgBox_flag = false;
+	private boolean valign_flag = false ; // accessed from toolbar class
+	private boolean deleteTangent_flag = false ;
+	private boolean popCurveSettings_flag = false ;
+	private boolean viewRoadOnly_flag = false ;
+
+	// window frame =================
+	private RoadGISPopup frmAbout;
+	private AboutPopup aboutPopup = null;
+	
 	private final static ArrayList<String> alignmentDesignCommands = new ArrayList<String>(
-			Arrays.asList(LAYER_IMPORT, INTERPOLATE, LINE, CURVE, HORIZONTAL_ALIGN, MARKER_HORIZONTAL, MARKER_INSERT, VERTICAL_ALIGN));
+			Arrays.asList(LAYER_IMPORT, LINE, CURVE, HORIZONTAL_ALIGN, MARKER_HORIZONTAL, MARKER_INSERT, VERTICAL_ALIGN, INTERPOLATE, OSM));
 
 	// class construction
 	public UIActionsController(RoadGISApplication gisApp)    {
 		this.app = gisApp;
-	}
 
+		// =======================================================================
+		// bring vertical design to top display thread
+		// =====================================================================
+		runThread0 = new Runnable() {
+			public void run() {
+				while (true) {
+					if (popMsgBox_flag){
+						popMessageBox1(msgBox_title, msgBox_message);
+						popMsgBox_flag = false ;
+					} else if (valign_flag){
+						//newstatus(10, " Vertical Curve Design");
+						valign_flag = false ;
+					} else if (deleteTangent_flag) {
+						app.getHorizontalDesign().popDeleteTangent("Delete Tangent Data","Do you want to delete tangent data pair?");
+						deleteTangent_flag = false ;
+					} else if (popCurveSettings_flag) {
+						app.getHorizontalDesign().popCurveSettings(); 
+						popCurveSettings_flag = false ;
+					} else {
+						tSetValign.yield();
+						try {Thread.sleep(100) ;}
+						catch (InterruptedException ie) {} ;
+					}
+				}
+			}   // void run
+		} ; // runThread 0
+		tSetValign = new Thread(runThread0, "VerticalAlign") ;
+		tSetValign.start() ;
+
+
+		frmAbout = new RoadGISPopup();
+
+	}
 	public void initializeToolbar()    {
 
 		//Add a Toolbar to separate from the GIS Tools
@@ -92,10 +151,13 @@ public class UIActionsController implements MouseListener,  MouseMotionListener,
 			}
 
 			if(command.equalsIgnoreCase(LAYER_IMPORT)){
-				button.addActionListener(new AddLayerAction(app));
+				button.addActionListener(new LayerAddAction(app));
 
 			}else if(command.equalsIgnoreCase(INTERPOLATE)){
-				button.addActionListener(new InterpolatePointsAction(app));
+				button.addActionListener(new LayerInterpolateAction(app));
+
+			}else if(command.equalsIgnoreCase(OSM)){
+				button.addActionListener(new LayerAddOSMAction(app));
 
 			}else if(command.equalsIgnoreCase(LINE)) {//Line Tool
 				/*
@@ -121,14 +183,14 @@ public class UIActionsController implements MouseListener,  MouseMotionListener,
 			}else if(command.equalsIgnoreCase(MARKER_HORIZONTAL)) {//H Marker Tool
 
 				//setCurrentCommand(CURVE);
-				button.addActionListener(new HorizontalMarkerAction(app) );
-				
+				button.addActionListener(new HorizontalMarkerInsertAction(app) );
+
 			}else if(command.equalsIgnoreCase(MARKER_INSERT)) {//H Marker Tool
 
 				//setCurrentCommand(CURVE);
 				button.addActionListener(new ElevationMarkerInsertAction(app) );
-				
-				
+
+
 			}else if(command.equalsIgnoreCase(VERTICAL_ALIGN)) {//Curve Tool
 
 				button.addActionListener(e -> app.getMapFrame().getMapPane().setCursorTool(
@@ -138,7 +200,7 @@ public class UIActionsController implements MouseListener,  MouseMotionListener,
 							public void onMouseClicked(MapMouseEvent ev) {
 								//selectFeatures(ev);
 								setCurrentCommand(VERTICAL_ALIGN);
-								app.getHorizontalDesign().setVerticalAlignmentStatus( true );//Launch Vertical Alignment Mode
+								app.getUIActionsHandler().setVerticalAlignmentStatus( true );//Launch Vertical Alignment Mode
 							}
 						}));
 			}else {
@@ -170,6 +232,10 @@ public class UIActionsController implements MouseListener,  MouseMotionListener,
 		edit_delete = appMenu.getDeleteMenu();
 
 		app.setJMenuBar(appMenu.getMenuBar());
+	}
+
+	public void initializeStatusbar()    {
+		horizontalStatusBar = new HorizontalStatusbar (app);
 	}
 
 	public String getActionString(int index)     {
@@ -343,6 +409,108 @@ public class UIActionsController implements MouseListener,  MouseMotionListener,
 		//hDesign.mouseClicked(mouseEvent);
 	}
 
+	/** Pop up a window to display message */   
+	public void popMessageBox(String caption, String message) {
+		msgBox_title = caption ;
+		msgBox_message = message ;
+		popMsgBox_flag = true ;
+	}
 
+	private void popMessageBox1(String caption, String message) {
+		// open a frame
+		RoadGISPopup frame_msgbox = new RoadGISPopup(caption) ;
+		//frame_msgbox.setLocation(400,50) ;
+		frame_msgbox.setSize(310,150) ;
+		frame_msgbox.setCenter() ;
+		frame_msgbox.validate() ;
+		frame_msgbox.setVisible(true) ;
+		frame_msgbox.setResizable(false);
+		//frame_msgbox.show() ;
+		/*
+        ActionListener frame_msgbox_ok_listener = new ActionListener() {
+            public void actionPerformed(ActionEvent aev) {
+
+                frame_msgbox.dispose() ;
+            }
+        } ;
+		 */
+		frame_msgbox.setLayout(new BorderLayout(1,1)) ;
+		JTextArea myTitle = new JTextArea(message, 3, 60) ;
+		myTitle.setFont(new Font("SansSerif", Font.PLAIN , 12)) ;
+		myTitle.setForeground(new Color(0,0,218)) ;
+		frame_msgbox.setBackground(new Color(200, 200, 200)) ;
+		frame_msgbox.add("Center",myTitle) ;
+
+		//Button btn_ok = new Button(" OK ") ;
+		//frame_msgbox.add("South",btn_ok) ;
+		//btn_ok.addActionListener(frame_msgbox_ok_listener) ;
+		//frame_msgbox.invalidate();
+		frame_msgbox.show() ;
+		frame_msgbox.toFront() ;
+	} // popMessageBox
+
+
+
+	// view horizontal road design only, w/o construction lines/circles
+	public void enableRoadOnly() {
+		viewRoadOnly_flag = true ;
+		//repaint() ;
+	}
+
+	public void enableRoadDesign() {
+		viewRoadOnly_flag = false ;
+		//repaint() ;
+	}
+
+
+	public boolean isVerticalAlignmentOngoing() {
+		return valign_flag;
+	}
+
+	public void setVerticalAlignmentStatus(boolean valign_flag) {
+		this.valign_flag = valign_flag;
+	}
+
+
+	// reset scales when loading new design
+	public void view_RESET() {
+		viewRoadOnly_flag = false ; // 11/22/06 added
+		//translate.getX()= 0;
+		//translate.getY()= 0;
+		//scaledxlate.getX()= 0;
+		//scaledxlate.getY()= 0;
+		//setDraw_scale(1f);
+		//getHorizontalStatusBar().setStatusBarText(3, new Float(Math.round(getDraw_scale()*10f)/10f).toString()) ;
+		//repaint();
+	}
+
+
+	public HorizontalStatusbar getHorizontalStatusBar() {
+		return horizontalStatusBar;
+	}
+
+	public void setHorizontalStatusBar(HorizontalStatusbar horizontalStatusBar) {
+		//this.horizontalStatusBar = horizontalStatusBar;
+	}
+
+	public void setStatusBarText(int status, String  text) {
+		//this.horizontalStatusBar = horizontalStatusBar;
+	}
+
+
+	public void popAbout(){
+		if (frmAbout.isShowing()==false) {
+
+			aboutPopup = new AboutPopup(app);			
+			aboutPopup.build();
+			aboutPopup.show();
+
+
+		}
+		else {
+			frmAbout.show();
+		}
+
+	}
 
 }

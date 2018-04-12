@@ -70,7 +70,7 @@ public class CurveSettingsPopup extends PopupWindow{
 							if (calcMinRadius > val) { 
 								app.getHorizontalDesign().popUpdateCurveRadius();
 							} else {
-								app.getHorizontalDesign().popMessageBox("Check Minimum Radius","Design radius greater than \nminimum radius " + str_Rv + ". OK!");
+								app.getUIActionsHandler().popMessageBox("Check Minimum Radius","Design radius greater than \nminimum radius " + str_Rv + ". OK!");
 							}
 
 							//frame.dispose() ;

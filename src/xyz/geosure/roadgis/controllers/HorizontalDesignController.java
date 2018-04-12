@@ -1,21 +1,18 @@
 package xyz.geosure.roadgis.controllers;
 /*
  * HorizontalDesignController.java
- * Purpose is to provide an API for Horizontal Design Functions.
+ * Purpose is to provide an API for Horizontal Design Functions. We are striving to to eliminate 
+ * direct UI actions and move those to the UI Actions handler so that we can have a clean interface
  *
  * Created on March 21, 2018, Felix Kiptum
- * based on hDrawArea
+ * 
+ * based on hDrawArea by Chen
  */
 
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Font;
 import java.awt.Image;
 import java.io.IOException;
 import java.util.ArrayList;
-
-import javax.swing.JTextArea;
 
 import org.geotools.data.collection.ListFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureSource;
@@ -27,6 +24,7 @@ import org.geotools.map.FeatureLayer;
 import org.geotools.map.GridCoverageLayer;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.geometry.DirectPosition;
+import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.GeometryFactory;
@@ -76,6 +74,7 @@ public class HorizontalDesignController   {
 	private FeatureLayer radialLinesLayer = null;
 	private FeatureLayer pointsLayer = null;
 	private GridCoverageLayer DEMLayer = null;
+	private CoordinateReferenceSystem defaultCRS = null;
 
 	//private DefaultFeatureCollection geometricDesignCollection = null;
 	private ListFeatureCollection designLinesCollection = null;
@@ -83,7 +82,6 @@ public class HorizontalDesignController   {
 	private ListFeatureCollection designMarksCollection = null;
 	private ContourImage contourImage = null;
 
-	private HorizontalStatusbar horizontalStatusBar;           // status bar
 	final int grid = 8;           // drawarea grid size
 	final String NO_MAP_MSG = "No contour image loaded.\n\nPlease import contour map as background\nimage first!" ;
 
@@ -119,14 +117,8 @@ public class HorizontalDesignController   {
 	private TangentDeletePopup tangentDeletePopup = null;
 	private SegmentDeletePopup deleteSegmentPopup = null ;
 
-	private AboutPopup aboutPopup = null;
-
-
 	private int toolbarIndex = 0 ;
-
-
 	public boolean modification_started = false ;
-
 
 	private int delta=50;
 	//Graphics g ;
@@ -136,7 +128,6 @@ public class HorizontalDesignController   {
 	int dataSelIndex = -1 ;
 
 	// Horizontal geometry DB
-	private int hRoadDataCount = 0;  // number of segments (line/curve)
 	private int segLogIndex  = -1;
 	private int[] segLogBuffer = new int[16] ;   // undo, redo log
 	private int markLogIndex = -1 ;
@@ -153,12 +144,6 @@ public class HorizontalDesignController   {
 	int idSegment ;
 	private String tangentPrintStr ;    // save and print tangent (PC, PT) data
 
-	// window frame =================
-	RoadGISPopup frmAbout, frame_clearLandmarks ;
-	RoadGISPopup frame_deleteSegment, frame_msgboxClearAll; 
-	RoadGISPopup frmInsertElevationMarker ;     // 2/28/07
-	RoadGISPopup frame_deleteTangent ;
-	RoadGISPopup frame_saveVDesign ;    //11/13/06 added
 
 	public myFrame frmVerticalAlign = new myFrame() ;
 
@@ -166,13 +151,6 @@ public class HorizontalDesignController   {
 
 
 	//PageFormat printPageFormat = new PageFormat() ;
-	Runnable runThread0 = null ;    // stop on red light
-	public Thread tSetValign ;
-	private boolean valign_flag = false ; // accessed from toolbar class
-	private boolean deleteTangent_flag = false ;
-	private boolean popCurveSettings_flag = false ;
-	private boolean popMsgBox_flag = false ;
-	private boolean viewRoadOnly_flag = false ;
 	private String msgBox_title = "" ;
 	private String msgBox_message = "" ;
 	private String item_clicked_str = "" ;      // used for right mouse delete
@@ -210,38 +188,10 @@ public class HorizontalDesignController   {
 			e.printStackTrace();
 		}
 
-		setHorizontalStatusBar(new HorizontalStatusbar()) ;
 
 		//setBackground(Color.white);
 
-		// =======================================================================
-		// bring vertical design to top display thread
-		// =====================================================================
-		runThread0 = new Runnable() {
-			public void run() {
-				while (true) {
-					if (popMsgBox_flag){
-						popMessageBox1(msgBox_title, msgBox_message);
-						popMsgBox_flag = false ;
-					} else if (valign_flag){
-						//newstatus(10, " Vertical Curve Design");
-						valign_flag = false ;
-					} else if (deleteTangent_flag) {
-						popDeleteTangent("Delete Tangent Data","Do you want to delete tangent data pair?");
-						deleteTangent_flag = false ;
-					} else if (popCurveSettings_flag) {
-						popCurveSettings(); 
-						popCurveSettings_flag = false ;
-					} else {
-						tSetValign.yield();
-						try {Thread.sleep(100) ;}
-						catch (InterruptedException ie) {} ;
-					}
-				}
-			}   // void run
-		} ; // runThread 0
-		tSetValign = new Thread(runThread0, "VerticalAlign") ;
-		tSetValign.start() ;
+
 
 
 	}
@@ -249,7 +199,6 @@ public class HorizontalDesignController   {
 	// object initialization
 	public void init(int flag) {
 
-		frmAbout = new RoadGISPopup();
 
 		roadDesign.setImageScale((float)roadDesign.getContourImageResolution() / (float)roadDesign.getContourScale());  //  // pixel/ft
 		if (flag==0) {
@@ -266,10 +215,10 @@ public class HorizontalDesignController   {
 			segLogBuffer[i] = -1;
 			markLogBuffer[i] = -1;
 		}
-		push2SegLogBuffer(hRoadDataCount); 
+		push2SegLogBuffer(roadDesign.getNumberOfHorizontalAlignmentMarks()); 
 		push2MarkLogBuffer(roadDesign.getElevationMarkCount()); 
 
-		getHorizontalStatusBar().setStatusBarText(3, new Float(Math.round(getDraw_scale()*10f)/10f).toString()) ;
+		app.getUIActionsHandler().setStatusBarText(3, new Float(Math.round(getDraw_scale()*10f)/10f).toString()) ;
 
 		if(null != contourImage) {
 			contourImage.process();
@@ -282,7 +231,7 @@ public class HorizontalDesignController   {
 		int i ;
 		double dist;
 		Point data = GeoUtils.makePoint(-1,-1);
-		for (i=0 ; i<hRoadDataCount; i++){
+		for (i=0 ; i<roadDesign.getNumberOfHorizontalAlignmentMarks(); i++){
 			// check point 1 or center of radius if a circle
 			dist = VectorUtils.distanceOf(roadDesign.getHorizontalAlignmentSegments().get(i).getStartPoint(), pointToFind);
 			//System.out.println("end pt1="+dist) ;
@@ -322,7 +271,7 @@ public class HorizontalDesignController   {
 		}
 	}
 
-	public void push2SegLogBuffer(int _myhRoadDataCount){
+	public void push2SegLogBuffer(int index){
 		// save # of data into log buffer
 		if (segLogIndex == segLogBuffer.length - 1 ) {
 			// buffer fulled
@@ -331,10 +280,10 @@ public class HorizontalDesignController   {
 			for (i=0; i<segLogIndex; i++) {
 				segLogBuffer[i] = segLogBuffer[i + 1];
 			}
-			segLogBuffer[segLogIndex] = _myhRoadDataCount;
+			segLogBuffer[segLogIndex] = index;
 		} else {
 			segLogIndex += 1;
-			segLogBuffer[segLogIndex] = _myhRoadDataCount;
+			segLogBuffer[segLogIndex] = index;
 		}
 	}
 
@@ -390,7 +339,7 @@ public class HorizontalDesignController   {
 		int i ;
 		double dist, cosine ;
 		item_clicked_str = "" ;
-		for (i = 0 ; i< hRoadDataCount; i++) {
+		for (i = 0 ; i< roadDesign.getNumberOfHorizontalAlignmentMarks(); i++) {
 			if (roadDesign.getHorizontalAlignmentSegments().get(i).getRadius() < 0) {
 				// line segment
 				// end point 1
@@ -443,7 +392,7 @@ public class HorizontalDesignController   {
 		boolean acceptElevation = false;
 		myIndex=-1 ;
 		double minDist=9999f ;
-		for (i=0; i<hRoadDataCount; i++) {
+		for (i=0; i<roadDesign.getNumberOfHorizontalAlignmentMarks(); i++) {
 			if (roadDesign.getHorizontalAlignmentSegments().get(i).getRadius() < 0) { 
 				// line segment
 				dist = VectorUtils.distanceOf(roadDesign.getHorizontalAlignmentSegments().get(i).getStartPoint(), pointToFind);
@@ -518,7 +467,7 @@ public class HorizontalDesignController   {
 		int i ;
 		double dist ;
 		boolean foundTangentPoint = false ;
-		for (i=0;i<roadDesign.getHorizontalAlignmentMarkCount();i++){
+		for (i=0;i<roadDesign.getNumberOfHorizontalAlignmentMarks();i++){
 			// check tangent landmark database
 			dist = VectorUtils.distanceOf(roadDesign.getHorizontalAlignmentMarks().get(i).getLocation(), pointToFind);
 			if (dist <= getEndMarkSize() * Math.sqrt(2) /getDraw_scale()) {
@@ -539,7 +488,7 @@ public class HorizontalDesignController   {
 			int bufData ;
 			bufData = popSegLogBuffer();
 			if (bufData >= 0) {
-				hRoadDataCount = bufData;
+				//roadDesign.getHorizontalAlignmentMarkCount() = bufData;
 			}
 		} else if (toolbarIndex==7) {
 			int bufData ;
@@ -558,7 +507,7 @@ public class HorizontalDesignController   {
 				if (segLogBuffer[segLogIndex + 1] >= 0) {
 					// log info exists
 					segLogIndex += 1;
-					hRoadDataCount = segLogBuffer[segLogIndex];
+					//roadDesign.getHorizontalAlignmentMarkCount() = segLogBuffer[segLogIndex];
 				}
 			}
 		} else if (toolbarIndex==7) {
@@ -576,7 +525,7 @@ public class HorizontalDesignController   {
 
 	public void edit_unselectAll() {
 		int i ;
-		for (i=0; i<hRoadDataCount;i++){
+		for (i=0; i<roadDesign.getNumberOfHorizontalAlignmentMarks();i++){
 			roadDesign.getHorizontalAlignmentSegments().get(i).unSelectItem();
 		}
 		//repaint();
@@ -584,30 +533,19 @@ public class HorizontalDesignController   {
 
 	public void edit_selectAll() {
 		int i ;
-		for (i=0; i<hRoadDataCount;i++){
+		for (i=0; i<roadDesign.getNumberOfHorizontalAlignmentMarks();i++){
 			roadDesign.getHorizontalAlignmentSegments().get(i).setItemSelect(true); 
 		}
 		//repaint();
 	}
 
-	// reset scales when loading new design
-	public void view_RESET() {
-		viewRoadOnly_flag = false ; // 11/22/06 added
-		//translate.getX()= 0;
-		//translate.getY()= 0;
-		//scaledxlate.getX()= 0;
-		//scaledxlate.getY()= 0;
-		//setDraw_scale(1f);
-		getHorizontalStatusBar().setStatusBarText(3, new Float(Math.round(getDraw_scale()*10f)/10f).toString()) ;
-		//repaint();
-	}
 
 	public int checkhAlignTangent(Point pointToFind) {
 		// transform pt from screen pixel to actual unit
 		int i ;
 		double dist ;
 		boolean foundTangentPoint=false ;
-		for (i=0;i<roadDesign.getHorizontalAlignmentMarkCount();i++) {
+		for (i=0;i<roadDesign.getNumberOfHorizontalAlignmentMarks();i++) {
 			// check tangent landmark database
 			dist = VectorUtils.distanceOf(roadDesign.getHorizontalAlignmentMarks().get(i).getLocation(), pointToFind);
 			if (dist <= getEndMarkSize() * Math.sqrt(2.0)/getDraw_scale()) { 
@@ -643,54 +581,7 @@ public class HorizontalDesignController   {
 		}
 	} //  checkElevationLandmarks
 
-	public void tool_curvehAlignMarks() {
-		int i, selectedCurve=-1 ;
-		int[] selectedLines = new int[2];
-		int selLineIdx = 0;
-		int selCurveIdx = 0;
-		for (i=0; i<hRoadDataCount; i++) {
-			if (roadDesign.getHorizontalAlignmentSegments().get(i).isSelected()) {
-				// item selected
-				if (roadDesign.getHorizontalAlignmentSegments().get(i).getRadius() < 0) { 
-					// line
-					selectedLines[selLineIdx] = i;
-					selLineIdx += 1;
-				} else {
-					// curve
-					selectedCurve = i;
-					selCurveIdx += 1;
-				}
-			}
-		} // for i
 
-		// check if 2 lines & 1 curve are selected
-		if ((selLineIdx == 2) && (selCurveIdx == 1)) { 
-			Point pt1;
-			Point pt2 ;  // 2 tangent points on the curve
-			calculateCurveCenter(selectedLines[0], selectedLines[1], selectedCurve);
-
-			pt1 = calculateTangentPoint(selectedLines[0], selectedCurve); 
-			roadDesign.getHorizontalAlignmentSegments().get(selectedCurve).saveTangentAngle((byte)1, pt1);
-			pt2 = calculateTangentPoint(selectedLines[1], selectedCurve); 
-			roadDesign.getHorizontalAlignmentSegments().get(selectedCurve).saveTangentAngle((byte)2, pt2); 
-
-			// save tangent points
-			AlignmentMarker startMarker = new AlignmentMarker(pt1, 0.0, selectedCurve, MarkerType.TANGENT);
-			AlignmentMarker endMarker = new AlignmentMarker(pt2, 0.0, selectedCurve, MarkerType.TANGENT);
-			roadDesign.addHorizontalAlignmentMarker(startMarker);
-			roadDesign.addHorizontalAlignmentMarker(endMarker);
-			
-			// unselect segments
-			roadDesign.getHorizontalAlignmentSegments().get(selectedLines[0]).unSelectItem();
-			roadDesign.getHorizontalAlignmentSegments().get(selectedLines[1]).unSelectItem();
-			roadDesign.getHorizontalAlignmentSegments().get(selectedCurve).unSelectItem();
-
-		} else {
-			popMessageBox("Horizontal Alignment","Please select 2 linear and 1 curve segments first!");
-		}
-		//repaint();
-		//PictureBox1.Invalidate()
-	}   // tool_curvehAlignMarks
 
 	public void tool_property() {
 		int i, selectedItems=0 ;
@@ -701,7 +592,7 @@ public class HorizontalDesignController   {
 		} else if (roadDesign.getPreferredUnit()==2 ) {
 			unitStr = " (m) " ;
 		}
-		for (i=0; i<hRoadDataCount; i++) {
+		for (i=0; i<roadDesign.getNumberOfHorizontalAlignmentMarks(); i++) {
 			if (roadDesign.getHorizontalAlignmentSegments().get(i).isSelected()) {
 				// item selected
 				if (roadDesign.getHorizontalAlignmentSegments().get(i).getRadius() < 0) { 
@@ -720,9 +611,9 @@ public class HorizontalDesignController   {
 
 		// check if 2 lines & 1 curve are selected
 		if (selectedItems>0) { 
-			popMessageBox("Properties", propertyStr);
+			app.getUIActionsHandler().popMessageBox("Properties", propertyStr);
 		} else {
-			popMessageBox("Properties","Please select a line or curve segment first!");
+			app.getUIActionsHandler().popMessageBox("Properties","Please select a line or curve segment first!");
 		}
 		//repaint();
 
@@ -752,9 +643,9 @@ public class HorizontalDesignController   {
         } // for i
 		 */
 		if (status.length()==0) { 
-			popMessageBox("Check Station Data", "Station data OK!");
+			app.getUIActionsHandler().popMessageBox("Check Station Data", "Station data OK!");
 		} else {
-			popMessageBox("Check Station Data", "Station data error at station "+status+".");
+			app.getUIActionsHandler().popMessageBox("Check Station Data", "Station data error at station "+status+".");
 		}
 
 		//repaint();
@@ -764,10 +655,10 @@ public class HorizontalDesignController   {
 	private String checkLandmarks() {
 		int i;
 		String status = "" ;
-		MarkerType last_type=roadDesign.getElevationMarks().get(0).getSegmentType() ;
+		MarkerType last_type=roadDesign.getElevationMarks().get(0).getMarkerType() ;
 		MarkerType cur_type=MarkerType.NONE ;
 		for (i=1; i<roadDesign.getElevationMarkCount(); i++) {
-			cur_type = roadDesign.getElevationMarks().get(i).getSegmentType() ;
+			cur_type = roadDesign.getElevationMarks().get(i).getMarkerType() ;
 			if (cur_type != MarkerType.TANGENT && last_type != cur_type && last_type != MarkerType.TANGENT) {
 				// not tangent, different type and not tangent previously
 				if (status.length()>0) {
@@ -782,93 +673,8 @@ public class HorizontalDesignController   {
 
 	}   // checkLandmarks
 
-	//Calculate the Centre of the Curve
-	public void calculateCurveCenter(int lineIndex1, int lineIndex2, int curveIndex) {
 
-		Point p1, p2, p3, p4, pc ;
-		double a1, a2, b1, b2 ;
-		double c2;
-		double c1;
-		double rad;
-		double L1;
-		double L2;
-		double den ;
-		Point[] Center = new Point[4] ;
-		p1 = roadDesign.getHorizontalAlignmentSegments().get(lineIndex1).getStartPoint();
-		p2 = roadDesign.getHorizontalAlignmentSegments().get(lineIndex1).getEndPoint();
-		p3 = roadDesign.getHorizontalAlignmentSegments().get(lineIndex2).getStartPoint();
-		p4 = roadDesign.getHorizontalAlignmentSegments().get(lineIndex2).getEndPoint();
-		pc = roadDesign.getHorizontalAlignmentSegments().get(curveIndex).getStartPoint();
-		rad = roadDesign.getHorizontalAlignmentSegments().get(curveIndex).getRadius() * roadDesign.getImageScale();
-		a1 = p2.getY()- p1.getY();
-		b1 = p1.getX()- p2.getX();
-		a2 = p4.getY()- p3.getY();
-		b2 = p3.getX()- p4.getX();
-		L1 = VectorUtils.distanceOf(p1, p2);
-		L2 = VectorUtils.distanceOf(p3, p4);
-		int i ;
-		for (i=0; i<4; i++) {
-			Center[i] = GeoUtils.makePoint(0,0);
-		}
-		den = (a1 * b2 - a2 * b1);
-		c1 = p2.getX()* p1.getY()- p1.getX()* p2.getY()+ L1 * rad;
-		c2 = p4.getX()* p3.getY()- p3.getX()* p4.getY()+ L2 * rad;
-		// case 1
-		Center[0] = GeoUtils.makePoint( (c2 * b1 - c1 * b2) / den,  -(c2 * a1 - c1 * a2) / den);
 
-		c1 = p2.getX()* p1.getY()- p1.getX()* p2.getY()+ L1 * rad;
-		c2 = p4.getX()* p3.getY()- p3.getX()* p4.getY()- L2 * rad;
-		// case 2
-		Center[1]= GeoUtils.makePoint((c2 * b1 - c1 * b2) / den, -(c2 * a1 - c1 * a2) / den);
-
-		c1 = p2.getX()* p1.getY()- p1.getX()* p2.getY()- L1 * rad;
-		c2 = p4.getX()* p3.getY()- p3.getX()* p4.getY()+ L2 * rad;
-		// case 3
-		Center[2] = GeoUtils.makePoint((c2 * b1 - c1 * b2) / den, -(c2 * a1 - c1 * a2) / den);
-
-		c1 = p2.getX()* p1.getY()- p1.getX()* p2.getY()- L1 * rad;
-		c2 = p4.getX()* p3.getY()- p3.getX()* p4.getY()- L2 * rad;
-		// case 4
-		Center[3] = GeoUtils.makePoint((c2 * b1 - c1 * b2) / den, -(c2 * a1 - c1 * a2) / den);
-
-		int index = 0;
-		double min_dist = 99999f;
-		double dist ;
-		// find the closest one
-		for (i=0; i<4; i++) {
-			dist = VectorUtils.distanceOf(pc, Center[i]);
-			if (dist < min_dist) {
-				min_dist = dist;
-				index = i;
-			}
-			//debugWindow.Text &= i & " (Xc, Yc)=" & Center(i).getX()& ", " & Center(i).getY()& " dist=" & dist & vbCrLf
-		}
-		//debugWindow.Text &= i & " (PXo, PYo)=" & pc.getX()& ", " & pc.getY()& vbCrLf
-
-		if (min_dist < 40 && min_dist >= 0) {    // change from 20 to 40 , 2/12/2007
-			roadDesign.getHorizontalAlignmentSegments().get(curveIndex).updateCurveCenter(Center[index]);
-		} else {
-			popMessageBox("calculateCurveCenter", "Please move curve closer to line segments!");
-		}
-
-	} //calculateCurveCenter
-
-	// calc & return tangent point of a line & a circle
-	public Point calculateTangentPoint(int lineIndex, int curveIndex) {
-		double dx, dy, xt, yt, xy, len2 ;
-		Point p1, p2, pc ;
-
-		p1 = roadDesign.getHorizontalAlignmentSegments().get(lineIndex).getStartPoint();
-		p2 = roadDesign.getHorizontalAlignmentSegments().get(lineIndex).getEndPoint();
-		pc = roadDesign.getHorizontalAlignmentSegments().get(curveIndex).getMidPoint();
-		xy = p2.getY()* p1.getX()- p1.getY()* p2.getX();
-		dx = p2.getX()- p1.getX();
-		dy = p2.getY()- p1.getY(); 
-		len2 = (dx*dx + dy*dy);
-		xt = (dy * xy + (pc.getY()* dy + pc.getX()* dx) * dx) / len2;
-		yt = (-dx * xy + (pc.getY()* dy + pc.getX()* dx) * dy) / len2;
-		return GeoUtils.makePoint(xt, yt);
-	}   // calculateTangentPoint
 
 	/** Pop up a window to display message */    
 	public void popElevationMarkerForm() {
@@ -879,7 +685,7 @@ public class HorizontalDesignController   {
 
 		}
 		else {
-			popMessageBox("No Contour Map", NO_MAP_MSG);
+			app.getUIActionsHandler().popMessageBox("No Contour Map", NO_MAP_MSG);
 		}
 
 	} // popElevationMarkerForm
@@ -896,7 +702,7 @@ public class HorizontalDesignController   {
 
 		}
 		else {
-			popMessageBox("No Contour Map", NO_MAP_MSG);
+			app.getUIActionsHandler().popMessageBox("No Contour Map", NO_MAP_MSG);
 		}
 
 	} // popInsertElevationMarker
@@ -919,7 +725,7 @@ public class HorizontalDesignController   {
 			curveSettingsPopup.show();
 		}
 		else {
-			popMessageBox("No Contour Map", NO_MAP_MSG);
+			app.getUIActionsHandler().popMessageBox("No Contour Map", NO_MAP_MSG);
 		}
 
 	} // popCurveSettings
@@ -947,45 +753,7 @@ public class HorizontalDesignController   {
 
 	} // popEditCurveSettings
 
-	/** Pop up a window to display message */   
-	public void popMessageBox(String caption, String message) {
-		msgBox_title = caption ;
-		msgBox_message = message ;
-		popMsgBox_flag = true ;
-	}
 
-	private void popMessageBox1(String caption, String message) {
-		// open a frame
-		RoadGISPopup frame_msgbox = new RoadGISPopup(caption) ;
-		//frame_msgbox.setLocation(400,50) ;
-		frame_msgbox.setSize(310,150) ;
-		frame_msgbox.setCenter() ;
-		frame_msgbox.validate() ;
-		frame_msgbox.setVisible(true) ;
-		frame_msgbox.setResizable(false);
-		//frame_msgbox.show() ;
-		/*
-        ActionListener frame_msgbox_ok_listener = new ActionListener() {
-            public void actionPerformed(ActionEvent aev) {
-
-                frame_msgbox.dispose() ;
-            }
-        } ;
-		 */
-		frame_msgbox.setLayout(new BorderLayout(1,1)) ;
-		JTextArea myTitle = new JTextArea(message, 3, 60) ;
-		myTitle.setFont(new Font("SansSerif", Font.PLAIN , 12)) ;
-		myTitle.setForeground(new Color(0,0,218)) ;
-		frame_msgbox.setBackground(new Color(200, 200, 200)) ;
-		frame_msgbox.add("Center",myTitle) ;
-
-		//Button btn_ok = new Button(" OK ") ;
-		//frame_msgbox.add("South",btn_ok) ;
-		//btn_ok.addActionListener(frame_msgbox_ok_listener) ;
-		//frame_msgbox.invalidate();
-		frame_msgbox.show() ;
-		frame_msgbox.toFront() ;
-	} // popMessageBox
 
 	public void print(){
 		// print current frame
@@ -1016,7 +784,7 @@ public class HorizontalDesignController   {
 
 		}
 		else {
-			popMessageBox("No Contour Map", NO_MAP_MSG);
+			app.getUIActionsHandler().popMessageBox("No Contour Map", NO_MAP_MSG);
 		}
 
 	} // popClearLandMark
@@ -1032,7 +800,7 @@ public class HorizontalDesignController   {
 
 		}
 		else {
-			popMessageBox("No Contour Map", NO_MAP_MSG);
+			app.getUIActionsHandler().popMessageBox("No Contour Map", NO_MAP_MSG);
 		}
 
 	} // popDeleteSegments
@@ -1065,7 +833,7 @@ public class HorizontalDesignController   {
 
 		}
 		else {
-			popMessageBox("No Contour Map", NO_MAP_MSG);
+			app.getUIActionsHandler().popMessageBox("No Contour Map", NO_MAP_MSG);
 		}
 
 	} // popClearAll
@@ -1087,20 +855,6 @@ public class HorizontalDesignController   {
 
 	}   // popVerticalAlign
 
-	public void popAbout(){
-		if (frmAbout.isShowing()==false) {
-
-			aboutPopup = new AboutPopup(app);			
-			aboutPopup.build();
-			aboutPopup.show();
-
-
-		}
-		else {
-			frmAbout.show();
-		}
-
-	}
 
 	public void popLandmarkData(){
 
@@ -1148,14 +902,32 @@ public class HorizontalDesignController   {
 			//System.out.println("segment:" + element.getAttribute("index") + " is " + element.getDefaultGeometry());
 		}
 
-		
+
 		if(addFeature) {
 			System.out.println("drawMyPoint:" + point);
 			//System.out.println("feature:" + feature);
 
 			designMarksCollection.add(feature); //Add feature 1
 			GeoUtils.refreshLayer(designMarksLayer);
-			
+
+			//Now we add a Horizontal Mark
+			//Add TO the Markers DB
+			if(null != DEMLayer) {
+				DirectPosition2D pos = new DirectPosition2D(x, y);//Note the Y and X because of a bug in how the TIF is saved - ordinate axes
+				double[] elev =  DEMLayer.getCoverage().evaluate((DirectPosition)pos, new double[1]);
+
+				AlignmentMarker marker = new AlignmentMarker();
+				marker.setLocation(GeoUtils.makePoint(x, y));
+				marker.setElevation(elev[0]);
+				if(lineHasStarted()) {
+					marker.setMarkerType(MarkerType.LINE);
+				}else if(curveHasStarted()) {
+					marker.setMarkerType(MarkerType.CURVE);
+				}
+				System.out.println(" Elevation:" + elev[0]);
+			}
+
+
 		}
 
 	}
@@ -1165,24 +937,17 @@ public class HorizontalDesignController   {
 		segment.setStartPoint(GeoUtils.toJTSPoint(startPoint));
 		segment.setEndPoint(GeoUtils.toJTSPoint(endPoint));
 		roadDesign.addHorizontalAlignmentSegment(segment);
-		hRoadDataCount ++;
+		//roadDesign.getHorizontalAlignmentMarkCount() ++;
 
 		// debug
-		//debugWindow.Text &= "P1=" & hRoadData(hRoadDataCount).getStartPoint.getX()& ", " & hRoadData(hRoadDataCount).getStartPoint.getY()
-		//debugWindow.Text &= "P2=" & hRoadData(hRoadDataCount).getEndPoint.getX()& ", " & hRoadData(hRoadDataCount).getEndPoint.getY()& vbCrLf
+		//debugWindow.Text &= "P1=" & hRoadData(roadDesign.getHorizontalAlignmentMarkCount()).getStartPoint.getX()& ", " & hRoadData(roadDesign.getHorizontalAlignmentMarkCount()).getStartPoint.getY()
+		//debugWindow.Text &= "P2=" & hRoadData(roadDesign.getHorizontalAlignmentMarkCount()).getEndPoint.getX()& ", " & hRoadData(roadDesign.getHorizontalAlignmentMarkCount()).getEndPoint.getY()& vbCrLf
 
 		// save # of data in log buffer
-		push2SegLogBuffer(hRoadDataCount);
+		push2SegLogBuffer(roadDesign.getNumberOfHorizontalAlignmentMarks());
 
 
-		//Add TO the Markers DB
-		if(null != DEMLayer) {
-			DirectPosition2D pos = new DirectPosition2D(startPoint.getY(),startPoint.getX());//Note the Y and X because of a bug in how the TIF is saved - ordinate axes
-			double[] elev =  DEMLayer.getCoverage().evaluate((DirectPosition)pos, new double[1]);
-							
-			System.out.println(" Elevation:" + elev[0]);
-		}
-		
+
 		GeometryFactory geometryFactory = new GeometryFactory();
 		ArrayList<Coordinate> positions = new ArrayList<Coordinate>();
 		positions.add(GeoUtils.toCoordinate(startPoint));
@@ -1282,8 +1047,8 @@ public class HorizontalDesignController   {
 			segment.setSegmentCentre(GeoUtils.makePoint(arc.getArcN(0).getCenter()));
 
 			roadDesign.addHorizontalAlignmentSegment(segment);
-			hRoadDataCount ++;
-			push2SegLogBuffer(hRoadDataCount);
+			//roadDesign.getHorizontalAlignmentMarkCount() ++;
+			push2SegLogBuffer(roadDesign.getNumberOfHorizontalAlignmentMarks());
 
 		}catch(Exception e) {
 			e.printStackTrace();
@@ -1296,17 +1061,6 @@ public class HorizontalDesignController   {
 	}
 
 
-	// view horizontal road design only, w/o construction lines/circles
-	public void viewRoadOnly() {
-		viewRoadOnly_flag = true ;
-		//repaint() ;
-	}
-
-	public void viewRoadDesign() {
-		viewRoadOnly_flag = false ;
-		//repaint() ;
-	}
-
 	public boolean lineHasStarted() {
 		return line_started;
 	}
@@ -1314,14 +1068,6 @@ public class HorizontalDesignController   {
 	public void setLineStarted(boolean status) {
 		this.curve_started = false;
 		this.line_started = status;
-	}
-
-	public boolean isVerticalAlignmentOngoing() {
-		return valign_flag;
-	}
-
-	public void setVerticalAlignmentStatus(boolean valign_flag) {
-		this.valign_flag = valign_flag;
 	}
 
 	public boolean curveHasStarted() {
@@ -1413,7 +1159,6 @@ public class HorizontalDesignController   {
 		System.out.println("endPoint : " + endPoint);
 	}
 
-
 	public void setContourImage(Image image) {
 		this.contourImage = (ContourImage) image;
 	}
@@ -1426,20 +1171,8 @@ public class HorizontalDesignController   {
 		this.roadDesign = myDB;
 	}
 
-	public int gethRoadDataCount() {
-		return hRoadDataCount;
-	}
-
-	public void sethRoadDataCount(int hRoadDataCount) {
-		this.hRoadDataCount = hRoadDataCount;
-	}
-
-	public HorizontalStatusbar getHorizontalStatusBar() {
-		return horizontalStatusBar;
-	}
-
-	public void setHorizontalStatusBar(HorizontalStatusbar horizontalStatusBar) {
-		this.horizontalStatusBar = horizontalStatusBar;
+	public int getHorizontalAlignmentMarkCount() {
+		return roadDesign.getNumberOfHorizontalAlignmentMarks();
 	}
 
 	public float getDraw_scale() {
@@ -1457,8 +1190,6 @@ public class HorizontalDesignController   {
 	public void setEndMarkSize(int endMarkSize) {
 		this.endMarkSize = endMarkSize;
 	}
-
-
 
 	public FeatureLayer getGridLinesLayer() {
 		return gridLinesLayer;
@@ -1485,5 +1216,13 @@ public class HorizontalDesignController   {
 
 	public void setDEMLayer(GridCoverageLayer dEMLayer) {
 		DEMLayer = dEMLayer;
+	}
+
+	public CoordinateReferenceSystem getDefaultCRS() {
+		return defaultCRS;
+	}
+
+	public void setDefaultCRS(CoordinateReferenceSystem defaultCRS) {
+		this.defaultCRS = defaultCRS;
 	}
 }   // hDrawArea class
